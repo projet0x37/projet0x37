@@ -8,7 +8,7 @@ The library we use to process audio files (libsndfile) is avaible on https://git
 */
 
 
-/*Ce code permet de renvoyer un tableau de donnée a partir d'un fichier wav */
+/*Ce code permet de renvoyer un tableau de données a partir d'un fichier wav */
 
 
 
