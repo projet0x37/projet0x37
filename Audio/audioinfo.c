@@ -2,6 +2,18 @@
 #include <string.h>
 #include <sndfile.h>
 
+/*
+The library we use to process audio files (libsndfile) is avaible on https://github.com/erikd/libsndfile/ or http://www.mega-nerd.com/libsndfile/ , and is developed by Erik de Castro Lopo
+
+
+
+
+ Affiche les informations d'un fichier audio:
+	nombre d'échantillons
+	fréquence d'échantillonage
+	nombre de canal
+	format 
+*/
 int main(void){
 SNDFILE* infile;
 SF_INFO sfinfo;

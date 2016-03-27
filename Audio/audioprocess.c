@@ -2,7 +2,17 @@
 #include <string.h>
 #include <sndfile.h>
 #include <stdlib.h>
+/*
+The library we use to process audio files (libsndfile) is avaible on https://github.com/erikd/libsndfile/ or http://www.mega-nerd.com/libsndfile/ , and is developed by Erik de Castro Lopo
 
+*/
+
+
+/*Ce code permet de renvoyer un tableau de donnée a partir d'un fichier wav */
+
+
+
+/* désentrelace un tableau contenant plusieurs canal, renvoit un tableau selon le canal choisit */
 double * channelread(int nbchannels, double *data,int frames,int channel){
 double* datachannel=NULL;
 int i=0;
@@ -34,12 +44,12 @@ if (! (infile = sf_open (infilename, SFM_READ, &sfinfo))) /*condition if prise d
 printf("samples:%ld, samplerate:%d, channels:%d, format:0x%x\n",sfinfo.frames,sfinfo.samplerate,sfinfo.channels,sfinfo.format);
 
 data=calloc( sfinfo.frames , sizeof(*data) );
-sf_read_double(infile , data, sfinfo.frames) ;
-sf_close( infile);
+sf_read_double(infile , data, sfinfo.frames) ; // stock les données infile dans le tableau data
+sf_close( infile); 
 printf("Quelle canal ? , choisir entre 0 et %d", (sfinfo.channels-1) );
 scanf( "%d",&c );
 datac=channelread(sfinfo.channels, data, sfinfo.frames, c);
-/*affiche les données brutes du fichier audio selon le canal choisi, aucune utilité, on pourra mettre un graph a la place*/
+/*affiche les données brutes du fichier audio selon le canal choisi, aucune utilité, on pourra mettre un graph a la place et renvoyer le tableau vers le bloc traitement */
 for( i=0 ; i < (sfinfo.frames/sfinfo.channels) ; i++ ){
 	printf("%f ",datac[i]);};
 return 0;
