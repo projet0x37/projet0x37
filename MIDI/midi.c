@@ -69,7 +69,9 @@ FILE * miditrackdata( Tnote tab , int tailletab , char * trackdata ){
 	int i;
 	liste Li=NULL;
 	liste Si=NULL;
+	liste p;
 	double tau;
+	double taudelay;
 	char* end = {0xff,0x2f,0x00};
 	for(i=0;i<tailletab;i++){
 		if(i == tailletab-1 ){
@@ -84,14 +86,16 @@ FILE * miditrackdata( Tnote tab , int tailletab , char * trackdata ){
 		
 		}
 		else{
-			Li=creationLi(tab[i].listenote);
+			Li=creationLi( tab[i].listenote );
 			noteon(Li,miditrackdata);
 			Li=concat(Li,Si);
 			Li=tri(&Li);
-			tau=tab[i+1]-tab[i]
-			Si=split(Si,tau);
-			noteoff(Li,Si,miditrackdata); // l'ajustement temporel des listes s'effectue dans note off et delay
-			delay(Si,tau,miditrackdata);
+			for( p=Li ; p->suiv ; p=p->suiv );
+			taudelay = tab[i+1].temps - p->duree ; // a faire avant le noteoff
+			tau = tab[i+1].temps-tab[i].temps
+			Si = split(Si,tau);
+			noteoff( Li , Si , miditrackdata ); // l'ajustement temporel des listes s'effectue dans note off et delay
+			delay( Si , taudelay , miditrackdata) ;
 			freelist(Li); // c'était une copie d'une liste de l'étape ti , libère la mémoire
 		}
 	}
