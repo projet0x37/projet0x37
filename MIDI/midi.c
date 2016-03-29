@@ -90,10 +90,10 @@ FILE * miditrackdata( Tnote tab , int tailletab , char * trackdata ){
 			noteon(Li,miditrackdata);
 			Li=concat(Li,Si);
 			Li=tri(&Li);
-			for( p=Li ; p->suiv ; p=p->suiv );
-			taudelay = tab[i+1].temps - p->duree ; // a faire avant le noteoff
 			tau = tab[i+1].temps-tab[i].temps
-			Si = split(Si,tau);
+			Si = split(Li,tau);
+			for( p=Li ; p->suiv ; p=p->suiv );
+			taudelay = tab[i+1].temps - p->duree ; // a faire avant le noteoff ET le split
 			noteoff( Li , Si , miditrackdata ); // l'ajustement temporel des listes s'effectue dans note off et delay
 			delay( Si , taudelay , miditrackdata) ;
 			freelist(Li); // c'était une copie d'une liste de l'étape ti , libère la mémoire
