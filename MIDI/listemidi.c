@@ -14,7 +14,10 @@ bufferc ajout_tetebuff(char r,bufferc l){
 
 bufferc supprimer_tetebuff(bufferc l){
 	if(l)){
-		liste p;
+		#include <stdio.h>
+#include <stdlib.>
+#include "midi.h"
+#include "listemidi.h"liste p;
 		p = l->suiv;
 		free(l);
 		return p;}
@@ -88,10 +91,27 @@ liste Tri(liste *l){// on donne un pointeur pour pouvoir supprimer de la mémoir
 				imax=i;
 				i=i+1; // on incrémente pour regarder au rang suivant
 				p=p->suiv;
-				}
+				liste tabtoliste(chord* tab){
+	liste l=NULL;
+	liste p=NULL;
+	p=calloc(1,sizeof(*p));
+	p.note=tab[0].note;
+	p.duree=tab[0].duree;
+	p=l;
+	for(i=1; i<31 && tab[i].note>-1; i++){
+		l=calloc(1,sizeof(*l));
+		l.note=tab[i].note;
+		l.duree=tab[i].duree;
+		l=l.suiv;
+		}
+	return(p)
+	}}
 			else{
 				i=i+1; // on en trouve pas on incrémente quand même
-				p=p->suiv;
+		#include <stdio.h>
+#include <stdlib.>
+#include "midi.h"
+#include "listemidi.h"		p=p->suiv;
 				}
 	
 		} // sortie de boucle , on a trouvé le maximum
@@ -120,9 +140,29 @@ liste creationLi(liste l){
 	p=calloc(1,sizeof(*p));
 	p->note=l->note;
 	p->duree=p->duree;
-	p->suiv=copie(l->suiv);
+	p->suiv=creationLi(l->suiv);
 	return p;
 }
+
+
+liste tabtoliste(chord* tab){
+	liste l=NULL;
+	liste p=NULL;
+	int i;
+	p=calloc(1,sizeof(*p));
+	p->note=tab[0].note;
+	p->duree=tab[0].duree;
+	p=l;
+	for(i=1; i<31 && tab[i].note>-1; i++){
+		l=calloc(1,sizeof(*l));
+		l->note=tab[i].note;
+		l->duree=tab[i].duree;
+		l=l.suiv;
+	}
+	return(p);
+}
+
+
 
 liste concat(liste l1, liste l2){
 	liste p=l1;
