@@ -15,7 +15,7 @@ typedef struct{
 
 typedef struct{
 	char note;
-	double durée;
+	double duree;
 	} chord;
 
 FILE * midihead( char * partition ); // initiliase le fichier midi avec l'entéte principal
