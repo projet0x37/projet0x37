@@ -120,7 +120,7 @@ liste creationLi(liste l){
 	p=calloc(1,sizeof(*p));
 	p->note=l->note;
 	p->duree=p->duree;
-	p->suiv=copie(l->suiv);
+	p->suiv=creationLi(l->suiv);
 	return p;
 }
 
