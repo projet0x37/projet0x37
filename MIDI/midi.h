@@ -9,11 +9,14 @@
 
 
 typedef struct{
-	liste * listenote; //accord dont les notes sont associées à des durées , une liste de notes avec leur durée
+	chord tabchord[31]; //accord dont les notes sont associées à des durées , un tableau de notes avec leur durée
 	double temps;
 	}notes, *Tnote;
 
- 
+typedef struct{
+	char note;
+	double durée;
+	} chord;
 
 FILE * midihead( char * partition ); // initiliase le fichier midi avec l'entéte principal
 
