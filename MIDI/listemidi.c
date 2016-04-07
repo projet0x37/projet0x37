@@ -134,10 +134,12 @@ liste tabtoliste(chord tab[]){
 	for(i=0; i<31 && tab[i].note > -1 ; i++){
 		l->note=tab[i].note;
 		l->duree=tab[i].duree;
-		l->suiv=calloc(1,sizeof(*l));
-		l=l->suiv;
+		if(tab[i+1].note < 0) l->suiv=NULL;
+		else{
+			l->suiv=calloc(1,sizeof(*l));
+			l=l->suiv;
+		}
 	}
-	l->suiv=NULL;
 	return(p);
 }
 

@@ -124,16 +124,19 @@ void noteon( liste Li , FILE * midibin ){
 	liste p=Li;
 	char t[4] = {0x90,Li->note,0x64,0x00};
 	char c[3] = {0x90,00,0x64};
-	//c = calloc(3,sizeof(*c));
-	//t = calloc(4,sizeof(*t));
-	//t = {0x90,Li->note,0x64,0x00}; // on fixe la vélocité a 64 , c'est pas trés important , 0x90 signifie noteon les appels des notes sont simultanés d'ou , le délai fixé a 0x00
-	for( p=Li ; (p->suiv)->suiv ; p=p->suiv ){
-		t[1] = p->note; 
-		fwrite(t,sizeof(char),sizeof(t),midibin);
+	// on fixe la vélocité a 64 , c'est pas trés important , 0x90 signifie noteon , les appels des notes sont simultanés d'où le délai fixé a 0x00
+	if(!p->suiv){
+		c[1] = p->note; // on est au dernier élément , on ne met pas de délai
+		fwrite(c,sizeof(char),sizeof(c),midibin);
 	}
-	p=p->suiv;
-	c[1] = p->note; // on est au dernier élément , on ne met pas de délai
-	fwrite(c,sizeof(char),sizeof(c),midibin);
+	else {
+		for( p=Li ; p->suiv ; p=p->suiv ){
+				t[1] = p->note; 
+				fwrite(t,sizeof(char),sizeof(t),midibin);
+		}
+		c[1] = p->note; // on est au dernier élément , on ne met pas de délai
+		fwrite(c,sizeof(char),sizeof(c),midibin);
+	}
 }
 
 void noteoff( liste Li , liste Si , FILE * miditrackdata ){
