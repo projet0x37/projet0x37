@@ -1,3 +1,6 @@
+#ifndef MIDI_H
+#define MIDI_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "listemidi.h"
@@ -7,16 +10,16 @@
                     ((num<<24)&0xff000000); // byte 0 to byte 3*/
 
 
+typedef struct{
+	char note;
+	double duree;
+	} chord;
 
 typedef struct{
 	chord tabchord[31]; //accord dont les notes sont associées à des durées , un tableau de notes avec leur durée
 	double temps;
 	}notes, *Tnote;
 
-typedef struct{
-	char note;
-	double duree;
-	} chord;
 
 FILE * midihead( char * partition ); // initiliase le fichier midi avec l'entéte principal
 
@@ -47,3 +50,5 @@ FILE * mergeandclose( FILE * f1 , FILE * f2 ,char * filename); //permet de fusio
 FILE * endmidi( FILE * midihead , FILE * miditrack , char * midiname );// finalise le fichier midi
 
 void mainmidi( char * midi , Tnote tab , int tailletab ); // fonction principale , l'écriture du midi se résume a elle seule , elle nécessite le nom du fichier midi désiré, le tableau de note et sa taille , on peut éventuellement ajouter en paramétre d'autres informations comme la division de la noire , le nombre de track etc ...
+
+#endif

@@ -9,16 +9,18 @@
 struct maillon {
 	char note;
 	double duree;
-	struct maillon* suiv;};
+	struct maillon* suiv;
+	};
 
-typedef struct maillon * liste;
+typedef struct maillon* liste;
+
 
 struct reste{
 	char r;
-	struct reste * suiv;
+	struct reste* suiv;
 	};
 
-typedef struct reste * bufferc;
+typedef struct reste* bufferc;
 
 
 
