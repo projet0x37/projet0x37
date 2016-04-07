@@ -6,7 +6,6 @@
 #include "midi.h"
 
 
-
 struct maillon {
 	char note;
 	double duree;
@@ -28,7 +27,6 @@ typedef struct reste* bufferc;
 // pour les listes de notes
 int est_vide(liste L);
 liste ajouttete3(liste l, double duree, char note);
-liste triLi(liste Li);
 liste supprimer_teteliste(liste l);
 liste supprimen(int n,liste l);
 liste tri(liste *l);
