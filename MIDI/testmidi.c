@@ -19,6 +19,7 @@ void main(void){
 	liste testLi;
 	liste testSi;
 	liste p;
+	int t;
 	double tau;
 	double taumax;
 	int i;
@@ -102,5 +103,24 @@ void main(void){
 	test=endmiditrack( miditrackheadf ,miditrackdataf , "track" );
 	*/
 	// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>test mainmidi, fonction principale<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-	mainmidi("outputmidi",test4,5);
+	puts("entrer le numéro du test entre 1 et 4");
+	scanf("%d",&t);
+	switch (t)
+	{
+	case 1:
+		mainmidi("outputmidi",test1,5);
+		break;
+	case 2:
+		mainmidi("outputmidi",test2,5);
+		break;
+	case 3:
+		mainmidi("outputmidi",test3,5);
+		break;
+	case 4:
+		mainmidi("outputmidi",test4,5);
+		break;
+	default:
+		mainmidi("outputmidi",test4,5);
+		break;
+	}
 }
