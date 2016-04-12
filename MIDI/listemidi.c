@@ -128,7 +128,7 @@ liste creationLi(liste l){
 }
 
 
-liste tabtoliste(chord tab[]){
+liste tabtoliste(chord tab[]){			//OK
 	liste l=NULL;
 	liste p=NULL;
 	int i=1;
