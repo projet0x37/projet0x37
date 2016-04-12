@@ -7,7 +7,7 @@
 bufferc ajout_tetebuff(char r,bufferc l){
 	bufferc p=NULL;
 	p=calloc(1,sizeof(*p));
-	(p->r)=r;
+	p->r=r;
 	p->suiv=l;
 	return p;
 	}
@@ -21,14 +21,14 @@ bufferc supprimer_tetebuff(bufferc l){
 	else return NULL;
 }
 
-void freebuff(bufferc l){
-	bufferc p = l;
+void freebuff(bufferc *l){
+	bufferc p = *l;
 	while(p) p=supprimer_tetebuff(p);
 }
 
 //liste
-void freeliste(liste l){
-	liste p = l;
+void freeliste(liste *l){
+	liste p = *l;
 	while(p) p=supprimer_teteliste(p);
 	}
 
@@ -74,12 +74,15 @@ liste supprimen(int n,liste l){
 
 liste tri(liste *l){// on donne un pointeur pour pouvoir supprimer de la mémoire la liste *l 
 	double dureemax;
+	char notedureemax;
 	liste p = *l;
 	liste r = NULL;
 	int i = 1;
 	int imax = 1;
-	dureemax = p->duree;
-	char notedureemax = p->note;
+	if(*l){
+		dureemax = p->duree;
+		notedureemax = p->note;
+	}
 	while( *l ){ // tant que tout n'est pas trié ( *l non vide ) on continue
 		while(p){ // Boucle pour chercher le maximum et sa position dans *l (isupp)
 			if( p->duree > dureemax){ // on en trouve un et on garde en mémoire ses caractéristiques

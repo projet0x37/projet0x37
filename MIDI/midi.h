@@ -41,7 +41,7 @@ void delay( liste Si , double taumax , FILE * miditrackdata ); // fonction qui c
 
 bufferc convert_128( double tau );// permet de convertir un temps(s)  en nombre de division de la noire , les octets sont renvoyés sous forme de liste et elle est utilisée par delay()
 
-liste split( liste Li, double taumax);// sépare en deux la liste de notes elle renvoit NULL si la durée de ttes les notes sont inférieures a tip - ti, une liste sinon
+liste split( liste * Li, double taumax);// sépare en deux la liste de notes elle renvoit NULL si la durée de ttes les notes sont inférieures a tip - ti, une liste sinon
 
 void ajustement( liste Li, double tau );// a mesure qu'on écrit les délais dans le fichier , on ajuste les durées de toutes les notes des listes.
 

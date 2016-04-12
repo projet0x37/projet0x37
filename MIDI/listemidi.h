@@ -31,11 +31,11 @@ liste triLi(liste Li);
 liste supprimer_teteliste(liste l);
 liste supprimen(int n,liste l);
 liste tri(liste *l);
-void freeliste(liste l);
+void freeliste(liste * l);
 liste creationLi(liste l);
 liste concat(liste l1, liste l2);
 // pour les liste de délais
 bufferc ajouttete(bufferc buf);
 bufferc supprimer_tetebuff(bufferc l);
-void freebuff(bufferc l);
+void freebuff(bufferc * l);
 #endif

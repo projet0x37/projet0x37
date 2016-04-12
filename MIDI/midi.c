@@ -44,7 +44,7 @@ FILE * miditrackhead( char * trackhead ){	//OK
 	char t[4] = {0x4d,0x54,0x72,0x6b}; // "Mtrk" est écrit , la longueur sera écrite plus tard
 	FILE* miditrackhead;
 	miditrackhead = fopen(trackhead,"w+b");
-	fwrite(t,sizeof(*t),sizeof(t),miditrackhead);
+	fwrite(t,sizeof(char),4,miditrackhead);
 	return miditrackhead;
 }
 
@@ -70,19 +70,18 @@ FILE * miditrackdata( Tnote tab , int tailletab , char * trackdata ){
 	liste Li=NULL;
 	liste Si=NULL;
 	liste p;
+	liste pt;
 	double tau;
 	double taudelay;
-	char end[3] = {0xff,0x2f,0x00};
 	for(i=0;i<tailletab;i++){
 		if(i == tailletab-1 ){
 			Li=tabtoliste(tab[i].tabchord);
 			noteon(Li,miditrackdata);
 			Li=concat(Li,Si);
 			Li=tri(&Li);
-			freeliste(Si);
+			//freeliste(&Si); bug a corriger
 			noteoff(Li,Si,miditrackdata);
-			freeliste(Li);
-			fwrite(end,sizeof(char),sizeof(end),miditrackdata);
+			freeliste(&Li);
 		
 		}
 		else{
@@ -91,12 +90,19 @@ FILE * miditrackdata( Tnote tab , int tailletab , char * trackdata ){
 			Li=concat(Li,Si);
 			Li=tri(&Li);
 			tau = tab[i+1].temps-tab[i].temps;
-			Si = split(Li,tau);
-			for( p=Li ; p->suiv ; p=p->suiv );
-			taudelay = tau - p->duree ; // a faire avant le noteoff ET le split
-			noteoff( Li , Si , miditrackdata ); // l'ajustement temporel des listes s'effectue dans note off et delay
-			delay( Si , taudelay , miditrackdata) ;
-			freeliste(Li); // c'était une copie d'une liste de l'étape ti , libère la mémoire
+			Si = split(&Li,tau);
+			if(Li){ // si Li est non NULL il y a des notes à éteindre
+				for( p=Li ; p->suiv ; p=p->suiv );
+				taudelay = tau - p->duree ; // a faire avant le noteoff ET le split
+				noteoff( Li , Si , miditrackdata ); // l'ajustement temporel des listes s'effectue dans note off et delay
+				delay( Si , taudelay , miditrackdata) ;
+				freeliste(&Li);
+			}
+			else{ // si Li est NULL il y a aucune note à éteindre , on comble le délai a l'aide de delay.
+				taudelay = tau;
+				delay(Si,taudelay,miditrackdata);
+				affiche(Si);
+			}
 		}
 	}
 	return miditrackdata;
@@ -106,16 +112,20 @@ FILE * endmiditrack( FILE * miditrackhead , FILE * miditrackdata , char * track 
 	FILE * miditrack;
 	int size;
 	int swappedsize;
+	char end[3] = {0xff,0x2f,0x00};
 	fseek(miditrackhead,0,SEEK_END);
 	size=(int)tailletrack(miditrackdata);
+	size+=3; // on rajoute 3 octets pour la cloture du fichier par ff 2f 00
+	printf("size of track : %d\n",size);// test
 	swappedsize= ((size>>24)&0xff) | ((size<<8)&0xff0000) | ((size>>8)&0xff00) | ((size<<24)&0xff000000); // conversion big endian / little endian
 	fwrite(&swappedsize,sizeof(swappedsize),1,miditrackhead);
 	miditrack=mergeandclose(miditrackhead,miditrackdata,track);
+	fwrite(end,sizeof(char),sizeof(end),miditrack); // on écrit ff 2f 00 pour la fin du track
 	return miditrack;
 }
 
 
-FILE * endmidi( FILE * midihead , FILE * miditrack , char * midiname ){ 
+FILE * endmidi( FILE * midihead , FILE * miditrack , char * midiname ){
 	return mergeandclose( midihead , miditrack , midiname);
 }
 
@@ -139,11 +149,12 @@ void noteon( liste Li , FILE * midibin ){
 	}
 }
 
-void noteoff( liste Li , liste Si , FILE * miditrackdata ){
+void noteoff( liste Li , liste Si , FILE * miditrackdata ){ // toujours de la forme {délai de la note i} + {noteoff note i}	
 	char* t;
 	char* c;
 	liste p;
-	bufferc buff;
+	double tau;
+	bufferc buff=NULL;
 	t=calloc(1,sizeof(*t));
 	c=calloc(3,sizeof(*c));
 	t[0] = 0; // on initialise t et c , t pour le mode délai et c pour le mode action (note off)
@@ -151,34 +162,21 @@ void noteoff( liste Li , liste Si , FILE * miditrackdata ){
 		c[0]=0x80;
 		c[1]=Li->note;
 		c[2]=0x00;
-		for(p=Li;p->suiv;p=p->suiv){
-			if(p==Li){//le premier octet écrit correspond au délai de la 1 ére note
-				buff=convert_128(p->duree);// on met dans un buffer les octets correspondant au mode delai
-				ajustement(Li,p->duree); // on oublie pas d'ajuster les durées des autres notes qui doivent étre éteintes plus tard
-				ajustement(Si,p->duree);
-				do{ // on rentre dans une boucle si jamais le nb d'octets a écrire  pour le délai est plus grand que 1 
-					t[0]=buff->r;
-					fwrite(t,sizeof(char),sizeof(t),miditrackdata);
-					buff=supprimer_tetebuff(buff); // une fois la donnée écrite on la supprime , elle n'est pas utile pour la suite
-				}
-				while(buff);
+		for(p=Li;p;p=p->suiv){
+			//le premier octet écrit correspond au délai de la 1 ére note
+			tau=p->duree;
+			buff=convert_128(tau);// on met dans un buffer les octets correspondant au mode delai
+			ajustement(Li,tau); // on oublie pas d'ajuster les durées des autres notes qui doivent étre éteintes plus tard
+			ajustement(Si,tau);
+			do{ // on rentre dans une boucle si jamais le nb d'octets a écrire  pour le délai est plus grand que 1 
+				t[0]=(char)buff->r;
+				fwrite(t,sizeof(char),1,miditrackdata);
+				buff=supprimer_tetebuff(buff); // une fois la donnée écrite on la supprime , elle n'est pas utile pour la suite
 			}
-			else{ // aprés le délai de la premiére note , on rentre dans le mode action et on éteint la premiére note
-				c[1]=p->note;
-				fwrite(c,sizeof(char),sizeof(c),miditrackdata);
-				if(p->suiv){ // on écrit pas de délai aprés la dernière note
-					// même étape que précédemment , une fonction aurait pu étre attribuée a cette écriture
-					buff=convert_128(p->duree);
-					ajustement(Li,p->duree); 
-					ajustement(Si,p->duree);
-					do{ //on écrit le délai de la note suivante
-						t[0]=buff->r;
-						fwrite(t,sizeof(char),sizeof(t),miditrackdata);
-						buff=supprimer_tetebuff(buff);
-					}
-					while(buff);
-				}
-			}
+			while(buff);
+			// aprés le délai de la note , on rentre dans le mode action et on l'éteint
+			c[1]=p->note;
+			fwrite(c,sizeof(char),3,miditrackdata);
 		}
 	}
 }
@@ -192,21 +190,31 @@ long int tailletrack(FILE * miditrackdata){
 
 	
 
-liste split( liste Li , double taumax ){ // retourne NULL si il n' y a pas de chevauchement temporel de notes
-	liste p=Li;
+liste split( liste *Li , double taumax ){ // retourne NULL si il n' y a pas de chevauchement temporel de notes
+	liste p=*Li;
+	liste a;
+	if(!p) return NULL;
 	if(taumax<0){
 		printf("problème appel fonction split\n");
 		return NULL;
 	}
-	for(p=Li;p->suiv && p->duree < taumax;p=p->suiv);
-	if(!p->suiv) return NULL;
-	else return p;
+	if(p==*Li && p->duree >taumax){
+		*Li=NULL;
+		return p;
+	}
+	for(p=*Li; p->suiv && p->suiv->duree <= taumax;p=p->suiv);
+	a=p->suiv;
+	p->suiv=NULL;
+	return a;	
 }
 
 void ajustement( liste Li , double tau ){
 	liste pl;
 	if(Li){	// n'ajuste rien si Li=NULL
-		for( pl=Li; pl->suiv; pl=pl->suiv)pl->duree-=tau;
+		for( pl=Li; pl; pl=pl->suiv){
+			if( pl->duree - tau >0 )pl->duree-=tau;
+			else pl->duree=0;
+		}
 	}
 }
 
@@ -232,26 +240,30 @@ bufferc convert_128( double tau ){ // a revoir on doit ajouter 128 a tout les oc
 void delay( liste Si , double taumax , FILE * miditrackdata ){
 	char * c;
 	bufferc buff;
-	buff=convert_128(taumax);
-	c=calloc(1,sizeof(*c));
-	while(buff->suiv){
-		c[0]=buff->r;
-		fwrite(c,sizeof(char),1,miditrackdata);
-		buff=supprimer_tetebuff(buff);
+	if(taumax>=0){
+		buff=convert_128(taumax);
+		c=calloc(1,sizeof(*c));
+		do{
+			c[0]=buff->r;
+			fwrite(c,sizeof(char),1,miditrackdata);
+			buff=supprimer_tetebuff(buff);
+		}
+		while(buff);
+		ajustement(Si,taumax); // on ajuste bien les durées des notes qui doivent étre eteintes au prochain noteoff
 	}
-	ajustement(Si,taumax); // on ajuste bien les durées des notes qui doivent étre eteintes au prochain noteoff
 }
+
 
 FILE * mergeandclose(FILE * f1, FILE * f2, char * filename){ // on met f2 aprés f1 , le fichier obtenu est f3 , on renvoit le pointeur
 	FILE * f3;
-	char c;
+	int c;
 	fseek(f1,0,SEEK_SET);
 	fseek(f2,0,SEEK_SET);
 	f3=fopen(filename,"w+b");
-	while( c = fgetc(f1) != EOF){
+	for(c=fgetc(f1);c!=EOF;c=fgetc(f1)){
 		fputc(c,f3);
 	}
-	while( c = fgetc(f2) != EOF){
+	for(c=fgetc(f2);c!=EOF;c=fgetc(f2)){
 		fputc(c,f3);
 	}
 	fclose(f1);
