@@ -70,7 +70,6 @@ FILE * miditrackdata( Tnote tab , int tailletab , char * trackdata ){
 	liste Li=NULL;
 	liste Si=NULL;
 	liste p;
-	liste pt;
 	double tau;
 	double taudelay;
 	for(i=0;i<tailletab;i++){
