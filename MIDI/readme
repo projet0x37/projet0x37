@@ -1,6 +1,7 @@
 Le makefile donne l'executable midi.exe correspondant au main() de testmidi.c
 
 Des tests sont présents dans le testmidi.c, 4 tableaux Tnote de longueur 5 sont disponibles
+Les notes sont numérotées de 0 à 128
 Le tableau test1 joue 1 note chaque seconde pendant 0.5 s , les notes vont de 60 à 64
 Le tableau test2 joue des accords (6i et 7i) de 2 notes chaque seconde pendant 0.5 s. avec i variant de 0 à 4
 Le tableau test3 joue 1 note chaque seconde pendant 1.5 s , les notes vont de 60 à 64
