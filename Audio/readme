@@ -1,0 +1,8 @@
+le makefile permet de créer un executable pour tester le bloc audio
+l'executable importe les données d'un fichier audio "test.wav" et les exporte dans un fichier "test.txt"
+
+les données sont visualisables sur scilab via la commande :
+	v=fscanfMat("test.txt")
+	plot(v)
+
+"make clean" supprime les fichiers objets .o et l'executable "audio.exe"
