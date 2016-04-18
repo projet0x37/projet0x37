@@ -1,4 +1,10 @@
+
+
 le makefile permet de créer un executable pour tester le bloc audio
+Pour un système 32 bits il est nécessaire d'effectuer les commandes suivantes:
+	rm libsndfile.a
+	mv libsndfile32.a libsndfile.a
+
 l'executable importe les données d'un fichier audio "test.wav" et les exporte dans un fichier "test.txt"
 
 les données sont visualisables sur scilab via la commande :

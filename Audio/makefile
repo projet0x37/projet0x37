@@ -5,7 +5,7 @@
 
 CC=gcc
 CFLAGS= -c -g
-LFLAGS = -L. -lsndfile -lm
+LFLAGS = -L. libsndfile.a -lm
 all: audio.exe
 
 audio.exe : textexport.o audioprocess.o testmain.o
