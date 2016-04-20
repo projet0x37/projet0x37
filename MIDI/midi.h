@@ -9,17 +9,13 @@
                     ((num>>8)&0xff00) | // move byte 2 to byte 1
                     ((num<<24)&0xff000000); // byte 0 to byte 3*/
 
-
-typedef struct{
-	char note;
-	double duree;
-	} chord;
-
 typedef struct{
 	chord tabchord[31]; //accord dont les notes sont associées à des durées , un tableau de notes avec leur durée
 	double temps;
 	}notes, *Tnote;
 
+
+void affiche(liste L);
 
 FILE * midihead( char * partition ); // initiliase le fichier midi avec l'entéte principal
 

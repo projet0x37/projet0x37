@@ -4,26 +4,9 @@
 
 //int tailleTnote(Tnote tab){
 
-void affiche(liste L){ // pour tester dans le programme
-	liste p;
-	for(p=L;p;p=p->suiv){
-		printf("%d %f\n",p->note,p->duree);
-	}
-}
-void main(void){
-	FILE * test;
-	FILE * midiheadf;
-	FILE * miditrackheadf;
-	FILE * miditrackdataf;
-	FILE * midi;
-	liste testLi;
-	liste testSi;
-	liste p;
+int main(int argc, char** args){
 	int t;
-	double tau;
-	double taumax;
 	int i;
-	char c;
 	Tnote test1;
 	Tnote test2;
 	Tnote test3;
@@ -123,4 +106,5 @@ void main(void){
 		mainmidi("outputmidi",test4,5);
 		break;
 	}
+	return EXIT_SUCCESS;
 }

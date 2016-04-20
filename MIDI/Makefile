@@ -3,10 +3,12 @@ CC=gcc
 
 CFLAGS=-c -Wall -g
 
+OBJECTS = listemidi.o midi.o testmidi.o
+
 all: midi.exe
 
-midi.exe: listemidi.o midi.o testmidi.o
-	$(CC) listemidi.o midi.o testmidi.o -lm -o midi.exe
+midi.exe: $(OBJECTS)
+	$(CC) $(OBJECTS) -lm -o midi.exe
 
 listemidi.o: listemidi.c
 	$(CC) $(CFLAGS) listemidi.c
@@ -18,5 +20,5 @@ testmidi.o: testmidi.c
 	$(CC) $(CFLAGS) testmidi.c
 
 clean:
-	rm *.o midi.exe
+	rm -f $(OBJECTS) midi.exe
 
