@@ -6,6 +6,12 @@
 
 #define D 240 // division de la noire 240 >> 1 seconde
 
+void affiche(liste L){ // pour tester dans le programme
+	liste p;
+	for(p=L;p;p=p->suiv){
+		printf("%d %f\n",p->note,p->duree);
+	}
+}
 
 /*On effectue des fusions de plusieurs fichiers,
 un fichier pour l'entéte principale (MTHD)
@@ -222,18 +228,20 @@ void ajustement( liste Li , double tau ){
 bufferc convert_128( double tau ){ // a revoir on doit ajouter 128 a tout les octets sauf le dernier
 	bufferc buf=NULL;
 	int R;
-	int Q=1;
-	double N=floor(tau*D);
-	int p=1;
+	int Q = 1;
+	double N = floor(tau*D);
+	int p = 1;
 	while(Q != 0){
-		R=(int)N%128;
-		Q=(int)N/128;
-		if(p==1){ // pour avoir le premier octet correspondant a 128**0*R
-			buf=ajout_tetebuff((char)(R),buf);
-			p=0;
+		R = (int)N%128;
+		Q = (int)N/128;
+		if(p == 1){ // pour avoir le premier octet correspondant a 128**0*R
+			buf = ajout_tetebuff((char)(R),buf);
+			p = 0;
 		}
-		else buf=ajout_tetebuff((char)(R+128),buf); // pour avoir les autres octets correspondants a 128**N*(R-128) ( c'est bien un + dans le else) voir le mode délais d'un MIDI
-		N=Q;
+		else {
+		  buf = ajout_tetebuff((char)(R+128),buf); // pour avoir les autres octets correspondants a 128**N*(R-128) ( c'est bien un + dans le else) voir le mode délais d'un MIDI
+		}
+		N = Q;
 	}
 	return buf;
 }
