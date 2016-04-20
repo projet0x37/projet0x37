@@ -33,7 +33,7 @@ Important: rajouter des vérifications pour les appels des fonctions fseek, call
 
 
 FILE * midihead( char * nompartition ){		//OK
-	char t[14]={0x4d,0x54,0x68,0x64,0x00,0x00,0x00,0x06,0x00,0x00,0x00,0x01,0x00,0xF0}; // ici on a mis le nombre de division à 0xF0= 240 , peut être provisoire
+	char t[14]={0x4d,0x54,0x68,0x64,0x00,0x00,0x00,0x06,0x00,0x01,0x00,0x01,0x00,0xF0}; // ici on a mis le nombre de division à 0xF0= 240 , peut être provisoire
 	FILE * midibin;
 	midibin = fopen(nompartition,"w+b");
 	fwrite(t,sizeof(char),sizeof(t),midibin);
@@ -72,6 +72,8 @@ FILE * miditrackdata( Tnote tab , int tailletab , char * trackdata ){
 	liste p;
 	double tau;
 	double taudelay;
+	char t[1] = {0x00};
+	fwrite(t,sizeof(char),1,miditrackdata);
 	for(i=0;i<tailletab;i++){
 		if(i == tailletab-1 ){
 			Li=tabtoliste(tab[i].tabchord);
