@@ -43,7 +43,7 @@
     xfft = x*fs/N // vecteur abcisse fréquentielle (normale)
     
     L = floor(L*N/fs)
-    u = u*N/fs
+    u = u*N/fs // conversion de u en fréquence entière
     nmax = floor(log(L/u)/log(4/3))   //plus grand n tel que L soit inférieur à u0*(4/3)^n ou n est le nb d'itération de la boucle
     
     
@@ -73,10 +73,15 @@
     figure(2)
     subplot(3,1,1)            //affichage du spectre abscisses freq (normale)
     plot(xfft,yb1)
-    //Suppresion du bruit et affichage sur figure 2
+    
+    //Suppression du bruit et affichage sur figure 2
     yb1=noisesup(1.5,100,N,fs,yb1,50,6000)
+    
+    
     figure(1)
-    b=BW(100,N,fs,xfft,500)
+    m0=0
+    m1=0
+    b=BW(100,N,fs,L,u,m0,m1)
     plot(xfft,b)
     
     
@@ -222,12 +227,11 @@ function y=noisesup(ratio,bandfmin,N,fs,x,fmin,fmax,xfft)
 //        endfunction
 //        
         
-        function b=BW(Bmin,N,fs,xfft,fb)
-            l=length(xfft)
+        function b=BW(Bmin,N,fs,l,kb,m0,m2)
             b = zeros(1,l)
             kmin = Bmin*N/fs
-            kb=round(fb*N/fs)
-            disp("kb",kb,"kmin",kmin)
+            kb=round(kb)
+            
             if kb*2/3 > kmin then
                 m0 = kb
                 m1 = kb*4/3
@@ -237,11 +241,11 @@ function y=noisesup(ratio,bandfmin,N,fs,x,fmin,fmax,xfft)
                 b2 = m2/(m2-m1)
                 a2 = 1/(m1-m2)
                 i = m0
-                while i <= m1
+                while i <= m1 & i<=l
                     b(i) = a1*i+b1;
                     i=i+1;
                 end
-                while i <= m2
+                while i <= m2 & i<=l
                     b(i) = a2*i+b2;
                     i=i+1
                 end
@@ -254,17 +258,55 @@ function y=noisesup(ratio,bandfmin,N,fs,x,fmin,fmax,xfft)
                 b2 = m2/(m2-m1)
                 a2 = 1/(m1-m2)
                 i = mo
-                while i <= m1
+                while i <= m1 & i<=l
                     b(i) = a1*i+b1;
                     i=i+1;
                 end
-                while i <= m2
+                while i < m2 & i<=l
                     b(i) = a2*i+b2;
                     i=i+1
                 end
                 
             end
-            disp(m2,m1,m0)
+            m2=i-1// afin d'avoir un Kb correct
+        endfunction
+        
+        
+        
+        function L=lvector(Bmin,nmax,z,N,fs,fb0,l)
+            L=zeros(1,length(z))
+            kb=N*fb0/fs
+            i=0
+            m0=0
+            m2=0
+            while i < nmax
+                if i== 0 then
+                    b=BW(Bmin,N,fs,l,kb,m0,m2)
+                    zb=z*b
+                    Kb=floor(m2)-m0+1
+                    Lb=lbvector(l,Kb,zb,m0,fb0,N,fs)
+                    L=L+Lb
+                    i=i+1
+                else
+                    kb = kb*4/3
+                    b=BW(Bmin,N,fs,l,kb,m0,m2)
+                    zb=z*b
+                    Kb=floor(m2)-m0+1
+                    Lb=lbvector(l,Kb,zb,m0,fb0,N,fs)
+                    L=L+Lb
+                    i=i+1
+                end
+            end
+            
+        endfunction
+        
+        function Lb=lbvector(l,Kb,zb,kb,fb0,N,fs) // non terminée
+            Lb=zeros(1,l)
+            m=0
+            n0 = floor(fb0*N/fs)
+            n1 = Kb -1
+            lb
+            
         endfunction
 
 
