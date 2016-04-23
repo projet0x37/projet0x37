@@ -27,7 +27,14 @@
         d=2**15
     else d=2**15
     end
-    
+    fig1=figure(1)
+    fig0=figure(0)
+    fig2=figure(2)
+    fig3=figure(3)
+    close(fig1)
+    close(fig2)
+    close(fig0)
+    close(fig3)
     
     
     N=d
@@ -56,8 +63,8 @@
     
     clf()
     
-    
     //Affichage temporel du signal
+    figure(0)
     subplot(2,1,1)
     plot(t,y(1,:))
     
@@ -75,14 +82,30 @@
     plot(xfft,yb1)
     
     //Suppression du bruit et affichage sur figure 2
-    yb1=noisesup(1.5,100,N,fs,yb1,50,6000)
+    z=noisesup(1.5,100,N,fs,yb1,50,7000)
     
-    
+    //affichage bande passante
     figure(1)
     m0=0
-    m1=0
-    b=BW(100,N,fs,L,u,m0,m1)
+    m2=0
+    [b,m0,m2]=BW(100,N,fs,L,8*u)
+    subplot(3,1,1)
     plot(xfft,b)
+    
+    //Affichage Lb
+    subplot(3,1,2)
+    zb=z.*b
+    plot(xfft,zb)
+    Kb=floor(m2)-m0 +1
+    disp(Kb)
+    Lb=lbvector(L,Kb,zb,m0,u,N,fs)
+    subplot(3,1,3)
+    plot(xfft,Lb)
+    
+//    //affichage vecteur Ltot
+//    lv=lvector(100,nmax,z,N,fs,u,L)
+//    figure(3)
+//    plot(xfft,lv)
     
     
 //    
@@ -227,7 +250,7 @@ function y=noisesup(ratio,bandfmin,N,fs,x,fmin,fmax,xfft)
 //        endfunction
 //        
         
-        function b=BW(Bmin,N,fs,l,kb,m0,m2)
+        function [b,m0,m2]=BW(Bmin,N,fs,l,kb) // ok
             b = zeros(1,l)
             kmin = Bmin*N/fs
             kb=round(kb)
@@ -257,7 +280,7 @@ function y=noisesup(ratio,bandfmin,N,fs,x,fmin,fmax,xfft)
                 a1 = 1/(m1-m0)
                 b2 = m2/(m2-m1)
                 a2 = 1/(m1-m2)
-                i = mo
+                i = m0
                 while i <= m1 & i<=l
                     b(i) = a1*i+b1;
                     i=i+1;
@@ -273,26 +296,26 @@ function y=noisesup(ratio,bandfmin,N,fs,x,fmin,fmax,xfft)
         
         
         
-        function L=lvector(Bmin,nmax,z,N,fs,fb0,l)
-            L=zeros(1,length(z))
-            kb=N*fb0/fs
+        function L=lvector(Bmin,nmax,z,N,fs,u,l)
+            L=zeros(1,l)
+            kb=u
             i=0
             m0=0
             m2=0
             while i < nmax
                 if i== 0 then
-                    b=BW(Bmin,N,fs,l,kb,m0,m2)
-                    zb=z*b
+                    [b,m0,m2]=BW(Bmin,N,fs,l,kb)
+                    zb=z.*b
                     Kb=floor(m2)-m0+1
-                    Lb=lbvector(l,Kb,zb,m0,fb0,N,fs)
+                    Lb=lbvector(l,Kb,zb,m0,u,N,fs)
                     L=L+Lb
                     i=i+1
                 else
                     kb = kb*4/3
-                    b=BW(Bmin,N,fs,l,kb,m0,m2)
-                    zb=z*b
+                    [b,m0,m2]=BW(Bmin,N,fs,l,kb)
+                    zb=z.*b
                     Kb=floor(m2)-m0+1
-                    Lb=lbvector(l,Kb,zb,m0,fb0,N,fs)
+                    Lb=lbvector(l,Kb,zb,m0,u,N,fs)
                     L=L+Lb
                     i=i+1
                 end
@@ -300,12 +323,36 @@ function y=noisesup(ratio,bandfmin,N,fs,x,fmin,fmax,xfft)
             
         endfunction
         
-        function Lb=lbvector(l,Kb,zb,kb,fb0,N,fs) // non terminée
+        function Lb=lbvector(l,Kb,zb,kb,u,N,fs)
             Lb=zeros(1,l)
-            m=0
-            n0 = floor(fb0*N/fs)
+            
+            m0=0
+            m1=0
+            n0 = round(u)
+            
             n1 = Kb -1
-            lb
+            
+            for n =n0:n1
+                m1 = n-1
+                disp(n*fs/N)
+                for m = m0:m1
+                    J = floor((Kb-m)/n)+1
+                    c = 0.75/J + 0.25
+                    Ln=0
+                    i=0
+                    while i <= J-1 & kb+m+n*i<=l
+                        Ln=Ln+c*zb(kb+m+n*i)
+                        i=i+1
+                        
+                    end
+                    
+                    if Lb(n)<Ln then
+                        Lb(n) = Ln
+                        
+                    end
+                    
+                end
+            end
             
         endfunction
 
