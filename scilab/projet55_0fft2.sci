@@ -51,7 +51,7 @@
     
     L = floor(L*N/fs)
     u = u*N/fs // conversion de u en fréquence entière
-    nmax = floor(log(L/u)/log(4/3))   //plus grand n tel que L soit inférieur à u0*(4/3)^n ou n est le nb d'itération de la boucle
+    nmax = floor(log(7000/u)/log(4/3))+1   //plus grand n tel que L soit inférieur à u0*(4/3)^n ou n est le nb d'itération de la boucle
     
     
     //Fenêtre de Hamming w
@@ -60,8 +60,6 @@
     
     // Passage du signal par la fenêtre de Hamming
     y(1,:) = y(1,:).*w
-    
-    clf()
     
     //Affichage temporel du signal
     figure(0)
@@ -76,36 +74,35 @@
     
     //Affichage du spectre figure 0 et 1
     subplot(2,1,2)            //affichage du spectre abscisses freq (normale)
-    plot(xfft,yb1)
-    figure(2)
-    subplot(3,1,1)            //affichage du spectre abscisses freq (normale)
-    plot(xfft,yb1)
-    
+    plot(yb1)
+
+        
     //Suppression du bruit et affichage sur figure 2
-    z=noisesup(1.5,100,N,fs,yb1,50,7000)
+    figure(2)
+    z=noisesup(1.5,100,N,fs,yb1,50,7000,xfft)
     
     //affichage bande passante
-    figure(1)
+    
     m0=0
     m2=0
-    [b,m0,m2]=BW(100,N,fs,L,8*u)
-    subplot(3,1,1)
-    plot(xfft,b)
+//    [b,m0,m2]=BW(100,N,fs,L,u*(4/3)**nb)
+//    subplot(3,1,1)
+//    plot(b)
     
     //Affichage Lb
-    subplot(3,1,2)
-    zb=z.*b
-    plot(xfft,zb)
-    Kb=floor(m2)-m0 +1
-    disp(Kb)
-    Lb=lbvector(L,Kb,zb,m0,u,N,fs)
-    subplot(3,1,3)
-    plot(xfft,Lb)
+//    figure(1)
+//    subplot(2,1,1)
+//    zb=z.*b
+//    plot(zb)
+//    Kb=floor(m2)-m0 +1
+//    Lb=lbvector(L,Kb,zb,m0,u,N,fs)
+//    subplot(2,1,2)
+//    plot(Lb)
     
-//    //affichage vecteur Ltot
-//    lv=lvector(100,nmax,z,N,fs,u,L)
-//    figure(3)
-//    plot(xfft,lv)
+    //affichage vecteur Ltot
+    lv=lvector(100,nmax,z,N,fs,u,L)
+    figure(3)
+    plot(lv)
     
     
 //    
@@ -175,28 +172,27 @@ function y=noisesup(ratio,bandfmin,N,fs,x,fmin,fmax,xfft)
     k0=fmin*N/fs
     k1=fmax*N/fs
     if k1>k0 & k1<s then // évite d'avoir des erreurs, renvoie y à zéros sinon
+        
         for i = k0 : k1
             g=g+x(i)**(1/3)
         end
         g=g/(k1-k0+1)
         g=g**3
         
-        disp("g:",g)
+        disp(g,"g")
         
         y=log(1+x/g)
         
         m=movingaverage(ratio,bandfmin,N,fs,y)
         // affichage du spectre Y(k) et de la moyenne courante m sur le méme grahe ( ici sur la figure 2 au milieu)
-        subplot(3,1,2)
-        plot(xfft,m,'r')
-        plot(xfft,y,'g')
         
         for i = 1:s
             y(i)=max(0,y(i)-m(i))
         end
+        
         // affichage du spectre final Z(k) en bas de la figure 2
-        subplot(3,1,3)
-        plot(xfft,y)
+        
+        plot(y)
         
     end
     
@@ -332,15 +328,18 @@ function y=noisesup(ratio,bandfmin,N,fs,x,fmin,fmax,xfft)
             
             n1 = Kb -1
             
-            for n =n0:n1
+            for n = n0:n1
                 m1 = n-1
-                disp(n*fs/N)
+                
                 for m = m0:m1
                     J = floor((Kb-m)/n)+1
                     c = 0.75/J + 0.25
                     Ln=0
                     i=0
+                    
                     while i <= J-1 & kb+m+n*i<=l
+                        
+                        
                         Ln=Ln+c*zb(kb+m+n*i)
                         i=i+1
                         
