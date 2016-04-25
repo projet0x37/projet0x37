@@ -49,9 +49,9 @@
     x = [0:1:N/2-1] // vecteur abcisse fréquentielle (entiers)
     xfft = x*fs/N // vecteur abcisse fréquentielle (normale)
     
-    L = floor(L*N/fs)
+    L = floor(N/2)
     u = u*N/fs // conversion de u en fréquence entière
-    nmax = floor(log(7000/u)/log(4/3))+1   //plus grand n tel que L soit inférieur à u0*(4/3)^n ou n est le nb d'itération de la boucle
+    nmax = floor(log(6000/u)/log(4/3))+1   //plus grand n tel que L soit inférieur à u0*(4/3)^n ou n est le nb d'itération de la boucle
     
     
     //Fenêtre de Hamming w
@@ -79,6 +79,7 @@
         
     //Suppression du bruit et affichage sur figure 2
     figure(2)
+    subplot(2,1,1)
     z=noisesup(1.5,100,N,fs,yb1,50,7000,xfft)
     
     //affichage bande passante
@@ -102,36 +103,8 @@
     //affichage vecteur Ltot
     lv=lvector(100,nmax,z,N,fs,u,L)
     figure(3)
+    
     plot(xfft,lv)
-    
-    
-//    
-//    //Affichage des bandes passantes
-//    figure(1)
-//    subplot(nmax+3,1,1)              //affichage du spectre abscisses freq entiers
-//    plot(x(1:L),yb1)
-//    
-//    
-//    TLb = zeros(1,nmax+2)  //initialisation du tableau de Lb (+2 pour ajourter le Lb correspondant au triangle à 50 Hz et eventuellement un autre)
-//    BWi = BWin(fs,L,N)
-//    yb11=yb1.*BWi(1:L)     //Calcul du Zb initial càd celui correspondant à la  BW de 100Hz
-//    subplot(nmax+3,1,2)
-//    plot(x(1:L),BWi(1:L))
-//    subplot(nmax+3,1,3)
-//    plot(x(1:L),yb11)
-//    for i = 1:1:nmax
-//        kb=floor(floor((100*(2**12))/44100)*(4/3)**i)
-//        BW = BWb(fs,L,N,kb)
-//        yb11=yb1.*BW(1:L)    //Calcul du Zb
-//        subplot(nmax+3,1,2)
-//        plot(x(1:L),BW(1:L))
-//        subplot(nmax+3,1,3+i)
-//        plot(x(1:L),yb11)
-//    end
-    
-    
-    
-    
     
     mclose('all')
     
@@ -142,14 +115,13 @@
 function m=movingaverage(ratio,bandfmin,N,fs,y)
     s=length(y)
     m=zeros(1,s)
-    
     kmin=fmin*N/fs
     l=0
     for k = 1:s
         if ratio*k<=kmin then
             l=round(kmin)
-            if k>=kmin then
-                m(k)=mean(y(round(k-kmin/2):round(k+kmin/2)));
+            if k>=kmin/2 then
+                m(k)=mean(y(ceil(k-kmin/2):round(k+kmin/2)));
             else
                 m(k)=mean(y(1,round(k*3/2)));
             end
@@ -185,66 +157,19 @@ function y=noisesup(ratio,bandfmin,N,fs,x,fmin,fmax,xfft)
         
         m=movingaverage(ratio,bandfmin,N,fs,y)
         // affichage du spectre Y(k) et de la moyenne courante m sur le méme grahe ( ici sur la figure 2 au milieu)
-        
+        plot(xfft,m,'r')
+        plot(xfft,y,'g')
         for i = 1:s
             y(i)=max(0,y(i)-m(i))
         end
         
         // affichage du spectre final Z(k) en bas de la figure 2
-        
+        subplot(2,1,2)
         plot(xfft,y)
         
     end
     
     endfunction
-
-
-//    function B=BWin(fs,L,N)
-//        B=zeros(1,N/2)
-//        m = round(50*N/fs)
-//        B = round(100*N/fs)+1
-//        M = m  + B
-//        m1 = round((m+M)/2)
-//        m2 = m1+1
-//        if modulo(B,2) == 0 then 
-//            m2=m1;
-//        end
-//        b1 = m/(m-m1)
-//        a1 = (1-b1)/m1
-//        b2 = M/(M-m2)
-//        a2 = (1-b2)/m2
-//        for i = m:1:m1
-//            B(i)= a1*i+b1;
-//        end
-//        for i = m2:1:M
-//            B(i)= a2*i + b2;
-//        end
-//        //x=[0:1:N/2-1]
-//        //plot(x,BW)
-//        endfunction
-//        
-//        function B=BWb(fs,L,N,kb)
-//            B = zeros(1,N/2)
-//            m0 = kb
-//            m1 = kb*4/3
-//            m2 = kb*5/3
-//            a1 = 3/kb
-//            b1= -3
-//            a2 = -3/kb
-//            b2 = 5
-//            i = m0
-//            while i <= m1
-//                B(i) = a1*i+b1;
-//                i=i+1;
-//            end
-//            while i <= m2
-//                B(i) = a2*i+b2;
-//                i=i+1
-//            end
-//            //x=[1:1:N/2]
-//            //plot(x,BW)
-//        endfunction
-//        
         
         function [b,m0,m2]=BW(Bmin,N,fs,l,kb) // ok
             b = zeros(1,l)
@@ -292,7 +217,7 @@ function y=noisesup(ratio,bandfmin,N,fs,x,fmin,fmax,xfft)
         
         
         
-        function L=lvector(Bmin,nmax,z,N,fs,u,l)
+        function L=lvector(Bmin,nmax,z,N,fs,u,l) 
             L=zeros(1,l)
             kb=u
             i=0
@@ -326,9 +251,6 @@ function y=noisesup(ratio,bandfmin,N,fs,x,fmin,fmax,xfft)
             n1 = Kb -1
             lb= kb +n1
             for n = n0:n1
-                
-                
-
                 m0=round(ceil(kb/n)*n)-kb
                 delta = lb*(sqrt(1+0.01*((lb/n)**2-1))-1)
                 m1=m0+delta
@@ -346,20 +268,13 @@ function y=noisesup(ratio,bandfmin,N,fs,x,fmin,fmax,xfft)
                     c = 0.75/J + 0.25
                     Ln=0
                     i=0
-                    
                     while i <= J-1 & kb+m+n*i<=l
-                        
-                        
                         Ln=Ln+c*zb(kb+m+n*i)
                         i=i+1
-                        
                     end
-                    
                     if Lb(n)<Ln then
                         Lb(n) = Ln
-                        
                     end
-                    
                 end
             end
             
@@ -373,8 +288,7 @@ function y=noisesup(ratio,bandfmin,N,fs,x,fmin,fmax,xfft)
                 for k=k0:k1
                     n=round(k/h)
                     if k<l then
-                        
-                    
+
                     if Lb(n)<zb(k) then
                         Lb(n)=zb(k)
                     end
