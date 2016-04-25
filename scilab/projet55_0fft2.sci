@@ -1,4 +1,4 @@
-    function[] = projet55_0fft(c,a,L,n,u)
+    function[] = projet55_0fft(c,a,L,n,u,nb)
     //script pour l'affichage de la transformée de Fourier rapide d'un fichier wav
     //selon un canal
     // Variables :
@@ -85,7 +85,7 @@
     
     m0=0
     m2=0
-//    [b,m0,m2]=BW(100,N,fs,L,u*(4/3)**nb)
+    [b,m0,m2]=BW(100,N,fs,L,u*(4/3)**nb)
 //    subplot(3,1,1)
 //    plot(b)
     
@@ -97,12 +97,12 @@
 //    Kb=floor(m2)-m0 +1
 //    Lb=lbvector(L,Kb,zb,m0,u,N,fs)
 //    subplot(2,1,2)
-//    plot(Lb)
+//    plot(xfft,Lb)
     
     //affichage vecteur Ltot
     lv=lvector(100,nmax,z,N,fs,u,L)
     figure(3)
-    plot(lv)
+    plot(xfft,lv)
     
     
 //    
@@ -192,7 +192,7 @@ function y=noisesup(ratio,bandfmin,N,fs,x,fmin,fmax,xfft)
         
         // affichage du spectre final Z(k) en bas de la figure 2
         
-        plot(y)
+        plot(xfft,y)
         
     end
     
@@ -321,18 +321,28 @@ function y=noisesup(ratio,bandfmin,N,fs,x,fmin,fmax,xfft)
         
         function Lb=lbvector(l,Kb,zb,kb,u,N,fs)
             Lb=zeros(1,l)
-            
-            m0=0
-            m1=0
             n0 = round(u)
             
             n1 = Kb -1
-            
+            lb= kb +n1
             for n = n0:n1
-                m1 = n-1
                 
+                
+
+                m0=round(ceil(kb/n)*n)-kb
+                delta = lb*(sqrt(1+0.01*((lb/n)**2-1))-1)
+                m1=m0+delta
+                if m1> m0+n-1 then
+                    m0=0
+                    m1=n-1
+                end   
+                
+                Lb(n)=0
                 for m = m0:m1
-                    J = floor((Kb-m)/n)+1
+                    J = floor((Kb-m-1)/n)+1
+                    if J <=0 then
+                        J=1
+                    end
                     c = 0.75/J + 0.25
                     Ln=0
                     i=0
@@ -353,6 +363,33 @@ function y=noisesup(ratio,bandfmin,N,fs,x,fmin,fmax,xfft)
                 end
             end
             
+            h=1
+            k0=floor((kb+Kb)/(h+1))
+            if k0<kb then
+                k0=kb
+            end
+            k1=kb+Kb-1
+            while k0<=k1
+                for k=k0:k1
+                    n=round(k/h)
+                    if k<l then
+                        
+                    
+                    if Lb(n)<zb(k) then
+                        Lb(n)=zb(k)
+                    end
+                    end
+                end
+                h=h+1
+                k0=ceil((kb+Kb)*h/(h+1))
+                if k0 < kb then 
+                    k0=kb
+                end
+                k1=floor((kb-1)*h/(h-1))
+                if k1 > kb+Kb then
+                    k1= kb+Kb
+                end
+            end
         endfunction
 
 
