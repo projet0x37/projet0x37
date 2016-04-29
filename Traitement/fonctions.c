@@ -71,3 +71,41 @@ double * Z_calc(double * Y, double * N, int taille){
     return Z;
 }
 
+
+void fosup(frame Zsmoothed, frame Z, int taille ){
+	int i;
+	for(i=0;i<taille;i++){
+		Z[i]=Z[i]-Zsmoothed[i] ; }
+	}
+
+int processing_init(frame X, frame Lmax,frame Npow, int taille, double threshold,int k0,int k1){
+	double Lmax1=0;	
+	int i;
+	double x=0;
+	double N=0;
+	double vo=0;
+	for(i=0;i<taille;i++){
+		Lmax1+=Lmax[i] ;
+	for(i=k0;i<k1;i++){
+		x+=X[i] ;
+		N+=Npow[i];
+	vo=4*ln(Lmax1)+ln(x)-ln(N) ;
+	if (vo>threshold) return 1;
+	if (vo<threshold) return 0;
+	
+
+int iteration_checking(frame X, frame Lmaxi,frame Npow, int taille,double treshold, int k0, int k1){
+	double Lmax1=0;	
+	int i;
+	double x=0;
+	double N=0;
+	double vo=0;
+	for(i=0;i<taille;i++){
+		Lmax1+=Lmaxi[i] ;
+	for(i=k0;i<k1;i++){
+		x+=X[i] ;
+		N+=Npow[i];
+	vo=1.8*ln(Lmax1)+ln(x)-ln(N) ;
+	if (vo>threshold) return 1;
+	if (vo<threshold) return 0;
+	
