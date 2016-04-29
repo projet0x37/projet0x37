@@ -1,4 +1,4 @@
-    function[] = projet55_0fft(c,a,n,u,nb)
+    function[] = projet55_0fft(c,a,L,n,u,nb)
     //script pour l'affichage de la transformée de Fourier rapide d'un fichier wav
     //selon un canal
     // Variables :
@@ -31,11 +31,12 @@
     fig0=figure(0)
     fig2=figure(2)
     fig3=figure(3)
+    fig4=figure(4)
     close(fig1)
     close(fig2)
     close(fig0)
     close(fig3)
-    
+    close(fig4)
     
     N=d
     
@@ -106,16 +107,18 @@
     
     plot(xfft,lv)
     
+    lissage(z,fs,N,1.5,100)
+    
     mclose('all')
     
     
     endfunction
 
 
-function m=movingaverage(ratio,fmin,N,fs,y)
+function m=movingaverage(ratio,bandfmin,N,fs,y)
     s=length(y)
     m=zeros(1,s)
-    kmin=fmin*N/fs
+    kmin=bandfmin*N/fs
     l=0
     for k = 1:s
         if ratio*k<=kmin then
@@ -152,10 +155,8 @@ function y=noisesup(ratio,bandfmin,N,fs,x,fmin,fmax,xfft)
         g=g**3
         
         disp(g,"g")
-        if y==!0 then
-            y=log(1+x/g)
-        end
         
+        y=log(1+x/g)
         
         m=movingaverage(ratio,bandfmin,N,fs,y)
         // affichage du spectre Y(k) et de la moyenne courante m sur le méme grahe ( ici sur la figure 2 au milieu)
@@ -307,10 +308,20 @@ function y=noisesup(ratio,bandfmin,N,fs,x,fmin,fmax,xfft)
                 end
             end
         endfunction
-        
-        
-        function T=boucle(z,x,npow)
-            
-        endfunction
 
 
+function[] = lissage(Z,fs,N,ratio,band)
+    m = movingaverage(ratio,band,N,fs,Z)
+    s=length(Z)
+    Zsmoothed = zeros(1,s)
+    for i = 1:s
+        Zsmoothed(i) = min(Z(i),m(i))
+    end
+     x = [0:1:N/2-1]
+    xfft = x*fs/N
+    xfft = xfft(1:L)
+    figure(4)
+    plot(xfft,Z)
+    plot(xfft,m,'r')
+    plot(xfft,Zsmoothed,'g')
+endfunction
