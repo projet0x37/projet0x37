@@ -1,4 +1,4 @@
-    function[] = projet55_0fft(c,a,L,n,u,nb)
+    function[] = projet55_0fft(c,a,n,u,nb)
     //script pour l'affichage de la transformée de Fourier rapide d'un fichier wav
     //selon un canal
     // Variables :
@@ -112,7 +112,7 @@
     endfunction
 
 
-function m=movingaverage(ratio,bandfmin,N,fs,y)
+function m=movingaverage(ratio,fmin,N,fs,y)
     s=length(y)
     m=zeros(1,s)
     kmin=fmin*N/fs
@@ -152,8 +152,10 @@ function y=noisesup(ratio,bandfmin,N,fs,x,fmin,fmax,xfft)
         g=g**3
         
         disp(g,"g")
+        if y==!0 then
+            y=log(1+x/g)
+        end
         
-        y=log(1+x/g)
         
         m=movingaverage(ratio,bandfmin,N,fs,y)
         // affichage du spectre Y(k) et de la moyenne courante m sur le méme grahe ( ici sur la figure 2 au milieu)
@@ -304,6 +306,11 @@ function y=noisesup(ratio,bandfmin,N,fs,x,fmin,fmax,xfft)
                     k1= kb+Kb
                 end
             end
+        endfunction
+        
+        
+        function T=boucle(z,x,npow)
+            
         endfunction
 
 
