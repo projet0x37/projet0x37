@@ -26,17 +26,17 @@ function[] = projet55_0fft(c,a,n,u,nb)
         d=2**15
     else d=2**15
     end
-    fig1=figure(1)
-    fig0=figure(0)
-    fig2=figure(2)
-    fig3=figure(3)
-    fig4=figure(4)
-    close(fig1)
-    close(fig2)
-    close(fig0)
-    close(fig3)
-    close(fig4)
-    
+//    fig1=figure(1)
+//    fig0=figure(0)
+//    fig2=figure(2)
+//    fig3=figure(3)
+//    fig4=figure(4)
+//    close(fig1)
+//    close(fig2)
+//    close(fig0)
+//    close(fig3)
+//    close(fig4)
+    del_all_graphics()
     N=d
     
     [y,fs,bits] = wavread(c,[N*(n-1)+1,N*n])
@@ -80,7 +80,7 @@ function[] = projet55_0fft(c,a,n,u,nb)
     //Suppression du bruit et affichage sur figure 2
     figure(2)
     subplot(2,1,1)
-    z=noisesup(2/3,100,N,fs,yb1,50,7000,xfft)
+    [z,m,k0,k1]=noisesup(2/3,100,N,fs,yb1,50,7000,xfft)
     
     //affichage bande passante
     
@@ -101,16 +101,19 @@ function[] = projet55_0fft(c,a,n,u,nb)
 //    plot(xfft,Lb)
     
     //affichage vecteur Ltot
-    lv=lvector(100,nmax,z,N,fs,u,L,2/3)
-    figure(3)
-    
-    plot(lv)
-    [t,k]=max(lv)
-    disp(k)
-    figure(4)
-    zs=lissage(z,fs,N,1.5,100,k)
+//    lv=lvector(100,nmax,z,N,fs,u,L,2/3)
+//    figure(3)
+//     
+//    plot(lv)
+//    [t,k]=max(lv)
+//    disp(k)
+//    figure(4)
+//    zs=lissage(z,fs,N,1.5,100,k)
     //plot(z,'g')
     
+    [tabnote,nbiteration]=boucle(z,yb1,m,100,nmax,N,fs,u,L,10,3,k0,k1,1)
+    disp(nbiteration)
+    disp(tabnote)
     mclose('all')
     
     
@@ -142,7 +145,7 @@ function m=movingaverage(ratio,bandfmin,N,fs,y)
 endfunction
 
 
-function y=noisesup(ratio,bandfmin,N,fs,x,fmin,fmax,xfft)
+function [y,m,k0,k1]=noisesup(ratio,bandfmin,N,fs,x,fmin,fmax,xfft)
     s=length(x)
     y=zeros(1,s)
     g=0
@@ -178,7 +181,7 @@ function y=noisesup(ratio,bandfmin,N,fs,x,fmin,fmax,xfft)
     
 endfunction
         
-function [b,m0,m2]=BW(Bmin,N,fs,l,kb,ratio) // ok
+function [b,m0,m2]=BW(Bmin,N,fs,l,kb,ratio) // ok , le ratio permet de modifier la largeur des portes
     b = zeros(1,l)
     kmin = Bmin*N/fs
     kb=round(kb)
@@ -313,15 +316,16 @@ function Lb=lbvector(l,Kb,zb,kb,u,N,fs)
 endfunction
 
 
-function zsmoothed = lissage(z,fs,N,ratio,band,k)
+function zsmoothed = lissage(z,fs,N,ratio,k)
     
     s=length(z)
     zsmoothed = zeros(1,s)
     i=k
     nfactor=0
     while i+k<=s
-        
-        [b,m0,m2]=BW(100,N,fs,s,i/2,2) // 2/3 ou 2
+        kb=i-i*ratio/2
+        rb=2*ratio/(2-ratio)
+        [b,m0,m2]=BW(100,N,fs,s,kb,rb) // la largeur est d'un octave par rapport à l'harmonique , on a fixé la largeur minimale à 100Hz , on changera peut être à 0 Hz , à voir ...
         zb=z.*b
         mz=mean(zb(m0:m2))
         mb=mean(b(m0:m2))
@@ -339,44 +343,52 @@ function zsmoothed = lissage(z,fs,N,ratio,band,k)
     
 endfunction
 
-function T=boucle(z,x,n,Bmin,nmax,N,fs,u,l,thresvo,thresvi,k0,k1,ratio,band)
+function [T,nbiteration]=boucle(z,x,n,Bmin,nmax,N,fs,u,l,thresvo,thresvi,k0,k1,ratio)
     T=zeros(1,31)
     b=1
-    i=0
+    i=1
     g=0
     xv=0
     Nv=0
     for j=k0:k1
         g=n(j)**(1/3)+g
-        xv=xv+x(k)
+        xv=xv+x(j)
     end
     g=g/(k1-k0+1)
     g=g**3
     Npow=(exp(n)-1)*g
     for j=k0:k1
-        Nv=Nv+Npow(k)
+        Nv=Nv+Npow(j)
     end
     
     SR=log(xv/Nv)
     
     while b==1
         L=lvector(Bmin,nmax,z,N,fs,u,l)
+        figure()
+        plot(L)
         [t,k]=max(L)
+        disp(b,'b')
+        disp(k,'k')
         if i==1 then
             v0=4*log(t)+SR
             disp(v0,'v0')
             disp(i,'i')
             if v0>thresvo then
                 T(i) = k
-                z=lissage(z,fs,N,ratio,band,k)
+                z=lissage(z,fs,N,ratio,k)
                 i=i+1
-            else b=0
+            else 
+                b=0
             end
+            
         else
             vi=1.8*log(t)-SR
+            disp(vi,'vi')
+            disp(i,'i')
             if vi>thresvi then
                 T(i)=k
-                z=lissage(z,fs,N,ratio,band,k)
+                z=lissage(z,fs,N,ratio,k)
                 i=i+1
             else
                 b=0
@@ -384,5 +396,22 @@ function T=boucle(z,x,n,Bmin,nmax,N,fs,u,l,thresvo,thresvi,k0,k1,ratio,band)
         end
         
     end
+    nbiteration=i-1
     
+endfunction
+
+function del_all_graphics()
+while %t
+  win=xget("window");
+  if win==0 then 
+    xdel(win);
+    win=xget("window");
+    if win==0 then 
+      xdel(win);
+      break 
+    end
+  else
+  xdel(win)
+  end
+end
 endfunction
