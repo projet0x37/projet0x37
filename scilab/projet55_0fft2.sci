@@ -1,13 +1,12 @@
-    function[] = projet55_0fft(c,a,L,n,u,nb)
+function[] = projet55_0fft(c,a,n,u,nb)
     //script pour l'affichage de la transformée de Fourier rapide d'un fichier wav
     //selon un canal
     // Variables :
     // c pour le nom du fichier wav
     // n pour le debut de le porte
     // a pour choisir la largeur de la porte
-    // L pour limiter le spectre entre 0 et L
     // u fréquence du début de la première bande passante
-    
+    // nb numéro de la bande passante à afficher
     
     //Pour choisir la largeur des portes  en supposant un échantillonnage usuel à 44100 Hz
     //1 >> 2**12  92 ms 
@@ -81,13 +80,13 @@
     //Suppression du bruit et affichage sur figure 2
     figure(2)
     subplot(2,1,1)
-    z=noisesup(1.5,100,N,fs,yb1,50,7000,xfft)
+    z=noisesup(2/3,100,N,fs,yb1,50,7000,xfft)
     
     //affichage bande passante
     
-    m0=0
-    m2=0
-    [b,m0,m2]=BW(100,N,fs,L,u*(4/3)**nb)
+//    m0=0
+//    m2=0
+//    [b,m0,m2]=BW(100,N,fs,L,u*(4/3)**nb,2/3)
 //    subplot(3,1,1)
 //    plot(b)
     
@@ -102,12 +101,15 @@
 //    plot(xfft,Lb)
     
     //affichage vecteur Ltot
-    lv=lvector(100,nmax,z,N,fs,u,L)
+    lv=lvector(100,nmax,z,N,fs,u,L,2/3)
     figure(3)
     
-    plot(xfft,lv)
-    
-    lissage(z,fs,N,1.5,100)
+    plot(lv)
+    [t,k]=max(lv)
+    disp(k)
+    figure(4)
+    zs=lissage(z,fs,N,1.5,100,k)
+    //plot(z,'g')
     
     mclose('all')
     
@@ -155,173 +157,232 @@ function y=noisesup(ratio,bandfmin,N,fs,x,fmin,fmax,xfft)
         g=g**3
         
         disp(g,"g")
+        if g ~= 0 then
+            y=log(1+x/g)
+        end
         
-        y=log(1+x/g)
         
         m=movingaverage(ratio,bandfmin,N,fs,y)
         // affichage du spectre Y(k) et de la moyenne courante m sur le méme grahe ( ici sur la figure 2 au milieu)
-        plot(xfft,m,'r')
-        plot(xfft,y,'g')
+        plot(m,'r')
+        plot(y,'g')
         for i = 1:s
             y(i)=max(0,y(i)-m(i))
         end
         
         // affichage du spectre final Z(k) en bas de la figure 2
         subplot(2,1,2)
-        plot(xfft,y)
+        plot(y)
         
     end
     
-    endfunction
+endfunction
         
-        function [b,m0,m2]=BW(Bmin,N,fs,l,kb) // ok
-            b = zeros(1,l)
-            kmin = Bmin*N/fs
-            kb=round(kb)
-            
-            if kb*2/3 > kmin then
-                m0 = kb
-                m1 = kb*4/3
-                m2 = kb*5/3
-                b1 = m0/(m0-m1)
-                a1 = 1/(m1-m0)
-                b2 = m2/(m2-m1)
-                a2 = 1/(m1-m2)
-                i = m0
-                while i <= m1 & i<=l
-                    b(i) = a1*i+b1;
-                    i=i+1;
-                end
-                while i <= m2 & i<=l
-                    b(i) = a2*i+b2;
-                    i=i+1
-                end
-            else
-                m0 = kb
-                m1 = kb + kmin/2
-                m2 = kb + kmin
-                b1 = m0/(m0-m1)
-                a1 = 1/(m1-m0)
-                b2 = m2/(m2-m1)
-                a2 = 1/(m1-m2)
-                i = m0
-                while i <= m1 & i<=l
-                    b(i) = a1*i+b1;
-                    i=i+1;
-                end
-                while i < m2 & i<=l
-                    b(i) = a2*i+b2;
-                    i=i+1
-                end
-                
-            end
-            m2=i-1// afin d'avoir un Kb correct
-        endfunction
+function [b,m0,m2]=BW(Bmin,N,fs,l,kb,ratio) // ok
+    b = zeros(1,l)
+    kmin = Bmin*N/fs
+    kb=round(kb)
+    if kb*ratio > kmin then
+        m0 = kb
+        m2 = m0+m0*ratio
+        m1 = (m0+m2)/2
+        b1 = m0/(m0-m1)
+        a1 = 1/(m1-m0)
+        b2 = m2/(m2-m1)
+        a2 = 1/(m1-m2)
+        i = m0
+        while i <= m1 & i<=l
+            b(i) = a1*i+b1;
+            i=i+1;
+        end
+        while i <= m2 & i<=l
+            b(i) = a2*i+b2;
+            i=i+1
+        end
+    else
+        m0 = kb
+        m1 = kb + kmin/2
+        m2 = kb + kmin
+        b1 = m0/(m0-m1)
+        a1 = 1/(m1-m0)
+        b2 = m2/(m2-m1)
+        a2 = 1/(m1-m2)
+        i = m0
+        while i <= m1 & i<=l
+            b(i) = a1*i+b1;
+            i=i+1;
+        end
+        while i < m2 & i<=l
+            b(i) = a2*i+b2;
+            i=i+1
+        end
         
-        
-        
-        function L=lvector(Bmin,nmax,z,N,fs,u,l) 
-            L=zeros(1,l)
-            kb=u
-            i=0
-            m0=0
-            m2=0
-            while i < nmax
-                if i== 0 then
-                    [b,m0,m2]=BW(Bmin,N,fs,l,kb)
-                    zb=z.*b
-                    Kb=floor(m2)-m0+1
-                    Lb=lbvector(l,Kb,zb,m0,u,N,fs)
-                    L=L+Lb
-                    i=i+1
-                else
-                    kb = kb*4/3
-                    [b,m0,m2]=BW(Bmin,N,fs,l,kb)
-                    zb=z.*b
-                    Kb=floor(m2)-m0+1
-                    Lb=lbvector(l,Kb,zb,m0,u,N,fs)
-                    L=L+Lb
-                    i=i+1
-                end
-            end
-            
-        endfunction
-        
-        function Lb=lbvector(l,Kb,zb,kb,u,N,fs)
-            Lb=zeros(1,l)
-            n0 = round(u)
-            
-            n1 = Kb -1
-            lb= kb +n1
-            for n = n0:n1
-                m0=round(ceil(kb/n)*n)-kb
-                delta = lb*(sqrt(1+0.01*((lb/n)**2-1))-1)
-                m1=m0+delta
-                if m1> m0+n-1 then
-                    m0=0
-                    m1=n-1
-                end   
-                
-                Lb(n)=0
-                for m = m0:m1
-                    J = floor((Kb-m-1)/n)+1
-                    if J <=0 then
-                        J=1
-                    end
-                    c = 0.75/J + 0.25
-                    Ln=0
-                    i=0
-                    while i <= J-1 & kb+m+n*i<=l
-                        Ln=Ln+c*zb(kb+m+n*i)
-                        i=i+1
-                    end
-                    if Lb(n)<Ln then
-                        Lb(n) = Ln
-                    end
-                end
-            end
-            
-            h=1
-            k0=floor((kb+Kb)/(h+1))
-            if k0<kb then
-                k0=kb
-            end
-            k1=kb+Kb-1
-            while k0<=k1
-                for k=k0:k1
-                    n=round(k/h)
-                    if k<l then
-
-                    if Lb(n)<zb(k) then
-                        Lb(n)=zb(k)
-                    end
-                    end
-                end
-                h=h+1
-                k0=ceil((kb+Kb)*h/(h+1))
-                if k0 < kb then 
-                    k0=kb
-                end
-                k1=floor((kb-1)*h/(h-1))
-                if k1 > kb+Kb then
-                    k1= kb+Kb
-                end
-            end
-        endfunction
-
-
-function[] = lissage(Z,fs,N,ratio,band)
-    m = movingaverage(ratio,band,N,fs,Z)
-    s=length(Z)
-    Zsmoothed = zeros(1,s)
-    for i = 1:s
-        Zsmoothed(i) = min(Z(i),m(i))
     end
-     x = [0:1:N/2-1]
-    xfft = x*fs/N
-    xfft = xfft(1:L)
-    figure(4)
-    plot(xfft,Z)
-    plot(xfft,m,'r')
-    plot(xfft,Zsmoothed,'g')
+    m2=i-1// afin d'avoir un Kb correct
+endfunction
+        
+        
+        
+function L=lvector(Bmin,nmax,z,N,fs,u,l,ratio) 
+    L=zeros(1,l)
+    kb=u
+    i=0
+    m0=0
+    m2=0
+    while i < nmax
+        if i== 0 then
+            [b,m0,m2]=BW(Bmin,N,fs,l,kb,ratio)
+            zb=z.*b
+            Kb=floor(m2)-m0+1
+            Lb=lbvector(l,Kb,zb,m0,u,N,fs)
+            L=L+Lb
+            i=i+1
+        else
+            kb = kb*4/3
+            [b,m0,m2]=BW(Bmin,N,fs,l,kb,ratio)
+            zb=z.*b
+            Kb=floor(m2)-m0+1
+            Lb=lbvector(l,Kb,zb,m0,u,N,fs)
+            L=L+Lb
+            i=i+1
+        end
+    end
+    
+endfunction
+        
+function Lb=lbvector(l,Kb,zb,kb,u,N,fs)
+    Lb=zeros(1,l)
+    n0 = round(u)
+    
+    n1 = Kb -1
+    lb= kb +n1
+    for n = n0:n1
+        m0=round(ceil(kb/n)*n)-kb
+        delta = lb*(sqrt(1+0.01*((lb/n)**2-1))-1)
+        m1=m0+delta
+        if m1> m0+n-1 then
+            m0=0
+            m1=n-1
+        end   
+        
+        Lb(n)=0
+        for m = m0:m1
+            J = floor((Kb-m-1)/n)+1
+            if J <=0 then
+                J=1
+            end
+            c = 0.75/J + 0.25
+            Ln=0
+            i=0
+            while i <= J-1 & kb+m+n*i<=l
+                Ln=Ln+c*zb(kb+m+n*i)
+                i=i+1
+            end
+            if Lb(n)<Ln then
+                Lb(n) = Ln
+            end
+        end
+    end
+    
+    h=1
+    k0=floor((kb+Kb)/(h+1))
+    if k0<kb then
+        k0=kb
+    end
+    k1=kb+Kb-1
+    while k0<=k1
+        for k=k0:k1
+            n=round(k/h)
+            if k<l then
+
+            if Lb(n)<zb(k) then
+                Lb(n)=zb(k)
+            end
+            end
+        end
+        h=h+1
+        k0=ceil((kb+Kb)*h/(h+1))
+        if k0 < kb then 
+            k0=kb
+        end
+        k1=floor((kb-1)*h/(h-1))
+        if k1 > kb+Kb then
+            k1= kb+Kb
+        end
+    end
+endfunction
+
+
+function zsmoothed = lissage(z,fs,N,ratio,band,k)
+    
+    s=length(z)
+    zsmoothed = zeros(1,s)
+    i=k
+    nfactor=0
+    while i+k<=s
+        
+        [b,m0,m2]=BW(100,N,fs,s,i/2,2) // 2/3 ou 2
+        zb=z.*b
+        mz=mean(zb(m0:m2))
+        mb=mean(b(m0:m2))
+        m=mz/mb
+        if i == k then
+            nfactor=z(i)/m
+        end
+        m=m*nfactor
+        zsmoothed(i)=min(zb(i),m) // a revoir , valable pour les moyennes hautes fréquences , à ajuster pour les petites
+        zsmoothed(i-1)=min(zb(i-1),m)
+        zsmoothed(i+1)=min(zb(i+1),m)
+        i=i+k
+    end
+    zsmoothed = z-zsmoothed
+    
+endfunction
+
+function T=boucle(z,x,n,Bmin,nmax,N,fs,u,l,thresvo,thresvi,k0,k1,ratio,band)
+    T=zeros(1,31)
+    b=1
+    i=0
+    g=0
+    xv=0
+    Nv=0
+    for j=k0:k1
+        g=n(j)**(1/3)+g
+        xv=xv+x(k)
+    end
+    g=g/(k1-k0+1)
+    g=g**3
+    Npow=(exp(n)-1)*g
+    for j=k0:k1
+        Nv=Nv+Npow(k)
+    end
+    
+    SR=log(xv/Nv)
+    
+    while b==1
+        L=lvector(Bmin,nmax,z,N,fs,u,l)
+        [t,k]=max(L)
+        if i==1 then
+            v0=4*log(t)+SR
+            disp(v0,'v0')
+            disp(i,'i')
+            if v0>thresvo then
+                T(i) = k
+                z=lissage(z,fs,N,ratio,band,k)
+                i=i+1
+            else b=0
+            end
+        else
+            vi=1.8*log(t)-SR
+            if vi>thresvi then
+                T(i)=k
+                z=lissage(z,fs,N,ratio,band,k)
+                i=i+1
+            else
+                b=0
+            end
+        end
+        
+    end
+    
 endfunction
