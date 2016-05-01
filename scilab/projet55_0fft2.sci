@@ -400,7 +400,7 @@ function [T,nbiteration]=boucle(z,x,n,Bmin,nmax,N,fs,u,l,thresvo,thresvi,k0,k1,r
     
 endfunction
 
-function del_all_graphics()
+function del_all_graphics() // fonction trouvée sur la librairie scilab de IRCOM Group Alan Layec 
 while %t
   win=xget("window");
   if win==0 then 
