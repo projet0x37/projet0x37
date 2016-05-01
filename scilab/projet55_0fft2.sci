@@ -103,15 +103,13 @@ function[] = projet55_0fft(c,a,n,u,nb)
     //affichage vecteur Ltot
 //    lv=lvector(100,nmax,z,N,fs,u,L,2/3)
 //    figure(3)
-//     
+     
 //    plot(lv)
 //    [t,k]=max(lv)
 //    disp(k)
 //    figure(4)
-//    zs=lissage(z,fs,N,1.5,100,k)
-    //plot(z,'g')
-    
-    [tabnote,nbiteration]=boucle(z,yb1,m,100,nmax,N,fs,u,L,10,3,k0,k1,1)
+//    zs=lissage(z,fs,N,2/3,k)    
+    [tabnote,nbiteration]=boucle(z,yb1,m,100,nmax,N,fs,u,L,10,7.855,k0,k1,1)
     disp(nbiteration)
     disp(tabnote)
     mclose('all')
@@ -330,17 +328,19 @@ function zsmoothed = lissage(z,fs,N,ratio,k)
         mz=mean(zb(m0:m2))
         mb=mean(b(m0:m2))
         m=mz/mb
+        
         if i == k then
             nfactor=z(i)/m
         end
         m=m*nfactor
-        zsmoothed(i)=min(zb(i),m) // a revoir , valable pour les moyennes hautes fréquences , à ajuster pour les petites
-        zsmoothed(i-1)=min(zb(i-1),m)
-        zsmoothed(i+1)=min(zb(i+1),m)
+        j0=round(i-i**(1/12)/2)
+        j1=round(i+i**(1/12)/2)
+        for j=j0:j1
+            zsmoothed(j)=min(zb(j),m) // a revoir , valable pour les moyennes hautes fréquences , à ajuster pour les petites
+        end
         i=i+k
     end
     zsmoothed = z-zsmoothed
-    
 endfunction
 
 function [T,nbiteration]=boucle(z,x,n,Bmin,nmax,N,fs,u,l,thresvo,thresvi,k0,k1,ratio)
@@ -350,6 +350,7 @@ function [T,nbiteration]=boucle(z,x,n,Bmin,nmax,N,fs,u,l,thresvo,thresvi,k0,k1,r
     g=0
     xv=0
     Nv=0
+    vi=0
     for j=k0:k1
         g=n(j)**(1/3)+g
         xv=xv+x(j)
@@ -369,7 +370,7 @@ function [T,nbiteration]=boucle(z,x,n,Bmin,nmax,N,fs,u,l,thresvo,thresvi,k0,k1,r
         plot(L)
         [t,k]=max(L)
         disp(b,'b')
-        disp(k,'k')
+        disp(k*fs/N,'F0')
         if i==1 then
             v0=4*log(t)+SR
             disp(v0,'v0')
@@ -383,10 +384,12 @@ function [T,nbiteration]=boucle(z,x,n,Bmin,nmax,N,fs,u,l,thresvo,thresvi,k0,k1,r
             end
             
         else
+            deltavi=vi
             vi=1.8*log(t)-SR
+            deltavi=abs(deltavi-vi)
             disp(vi,'vi')
             disp(i,'i')
-            if vi>thresvi then
+            if vi>thresvi & deltavi>0.001 then
                 T(i)=k
                 z=lissage(z,fs,N,ratio,k)
                 i=i+1
