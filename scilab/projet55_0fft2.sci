@@ -1,4 +1,4 @@
-function[] = projet55_0fft(c,a,n,u,nb)
+function[] = projet55_0fft(c,a,n,u,nb,meanfactor,v0,v1)
     //script pour l'affichage de la transformée de Fourier rapide d'un fichier wav
     //selon un canal
     // Variables :
@@ -7,7 +7,8 @@ function[] = projet55_0fft(c,a,n,u,nb)
     // a pour choisir la largeur de la porte
     // u fréquence du début de la première bande passante
     // nb numéro de la bande passante à afficher
-    
+    // meanfactor permet de réhausser un peu la moyenne en fonction du bruit
+    // v0 et v1 sont des valeurs seuils conditionnant la détection des F0
     //Pour choisir la largeur des portes  en supposant un échantillonnage usuel à 44100 Hz
     //1 >> 2**12  92 ms 
     //2 >> 2**13  185 ms
@@ -26,19 +27,8 @@ function[] = projet55_0fft(c,a,n,u,nb)
         d=2**15
     else d=2**15
     end
-//    fig1=figure(1)
-//    fig0=figure(0)
-//    fig2=figure(2)
-//    fig3=figure(3)
-//    fig4=figure(4)
-//    close(fig1)
-//    close(fig2)
-//    close(fig0)
-//    close(fig3)
-//    close(fig4)
     del_all_graphics()
     N=d
-    
     [y,fs,bits] = wavread(c,[N*(n-1)+1,N*n])
     
     Tf = N*n/fs
@@ -50,6 +40,7 @@ function[] = projet55_0fft(c,a,n,u,nb)
     xfft = x*fs/N // vecteur abcisse fréquentielle (normale)
     
     L = floor(N/2)
+    
     u = u*N/fs // conversion de u en fréquence entière
     nmax = floor(log(6000/u)/log(4/3))+1   //plus grand n tel que L soit inférieur à u0*(4/3)^n ou n est le nb d'itération de la boucle
     
@@ -66,23 +57,30 @@ function[] = projet55_0fft(c,a,n,u,nb)
     subplot(2,1,1)
     plot(t,y(1,:))
     
-    //Calcul des transformées de Fourier du signal
+    //Calcul des transformées de Fourier rapide du signal
     yfft1 = fft(y(1,:))
     yfft1 = yfft1(1:L) // limitation du spectre à L
     yb1 = abs(yfft1).^2 // Bien prendre le module au carré
     xfft = xfft(1:L) // limitation des abcisses à L
     
-    //Affichage du spectre figure 0 et 1
-    subplot(2,1,2)            //affichage du spectre abscisses freq (normale)
+    //Affichage du spectre figure
+    subplot(2,1,2)      //affichage du spectre
     plot(yb1)
 
         
     //Suppression du bruit et affichage sur figure 2
     figure(2)
     subplot(2,1,1)
-    [z,m,k0,k1]=noisesup(2/3,100,N,fs,yb1,50,7000,xfft)
+    [z,m,k0,k1]=noisesup(2/3,100,N,fs,yb1,50,6000,xfft,meanfactor)
     
-    //affichage bande passante
+
+    [tabnote,nbiteration]=boucle(z,yb1,m,100,nmax,N,fs,u,L,v0,v1,k0,k1,1)
+    disp(nbiteration)
+    disp(tabnote)
+
+    
+    
+     //affichage pour les tests, ( brouillon à ne pas prendre en compte dans l'algo)
     
 //    m0=0
 //    m2=0
@@ -101,20 +99,26 @@ function[] = projet55_0fft(c,a,n,u,nb)
 //    plot(xfft,Lb)
     
     //affichage vecteur Ltot
-//    lv=lvector(100,nmax,z,N,fs,u,L,2/3)
-//    figure(3)
-     
-//    plot(lv)
-//    [t,k]=max(lv)
+//    lv1=lvector(100,nmax,z,N,fs,u,L,2/3)
+////    figure(3)
+//     
+////    plot(lv)
+//    [t,k]=max(lv1)
 //    disp(k)
 //    figure(4)
-//    zs=lissage(z,fs,N,2/3,k)    
-    [tabnote,nbiteration]=boucle(z,yb1,m,100,nmax,N,fs,u,L,10,7.855,k0,k1,1)
-    disp(nbiteration)
-    disp(tabnote)
+//    zs=lissage(z,fs,N,2/3,k)
+//    
+//    lv2=lvector(100,nmax,z,N,fs,u,L,2/3)
+//    figure(3)
+//    dlv=lv1-lv2
+//    plot(dlv,'r')
+//    [t,k]=max(lv2)
+//    disp(k)
+//    figure(5)
+//    zs=lissage(zs,fs,N,2/3,k)
+
+
     mclose('all')
-    
-    
     endfunction
 
 
@@ -143,7 +147,7 @@ function m=movingaverage(ratio,bandfmin,N,fs,y)
 endfunction
 
 
-function [y,m,k0,k1]=noisesup(ratio,bandfmin,N,fs,x,fmin,fmax,xfft)
+function [y,m,k0,k1]=noisesup(ratio,bandfmin,N,fs,x,fmin,fmax,xfft,meanfactor)
     s=length(x)
     y=zeros(1,s)
     g=0
@@ -165,6 +169,7 @@ function [y,m,k0,k1]=noisesup(ratio,bandfmin,N,fs,x,fmin,fmax,xfft)
         
         m=movingaverage(ratio,bandfmin,N,fs,y)
         // affichage du spectre Y(k) et de la moyenne courante m sur le méme grahe ( ici sur la figure 2 au milieu)
+        m=m*meanfactor
         plot(m,'r')
         plot(y,'g')
         for i = 1:s
@@ -333,11 +338,14 @@ function zsmoothed = lissage(z,fs,N,ratio,k)
             nfactor=z(i)/m
         end
         m=m*nfactor
-        j0=round(i-i**(1/12)/2)
-        j1=round(i+i**(1/12)/2)
+        j0=floor(i-i**(1/12)*3/4)
+        j1=ceil(i+i**(1/12)*3/4)
         for j=j0:j1
-            zsmoothed(j)=min(zb(j),m) // a revoir , valable pour les moyennes hautes fréquences , à ajuster pour les petites
+            if abs(j-i) < 4 then
+                zsmoothed(j)=min(zb(j),m) // a revoir , valable pour les moyennes hautes fréquences , à ajuster pour les petites
+            end
         end
+        
         i=i+k
     end
     zsmoothed = z-zsmoothed
@@ -389,10 +397,11 @@ function [T,nbiteration]=boucle(z,x,n,Bmin,nmax,N,fs,u,l,thresvo,thresvi,k0,k1,r
             deltavi=abs(deltavi-vi)
             disp(vi,'vi')
             disp(i,'i')
-            if vi>thresvi & deltavi>0.001 then
+            if vi>thresvi & i<9 & deltavi>0.001 then
                 T(i)=k
                 z=lissage(z,fs,N,ratio,k)
                 i=i+1
+                
             else
                 b=0
             end
