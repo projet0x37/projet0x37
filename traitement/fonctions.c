@@ -132,3 +132,16 @@ int F0fromL(double* L, int taille){			//Testée et approuvée
 	}
 	return(fM);
 }
+
+double mean(double* T, int taille){    //Calcul de moyenne	//Testée et Approuvée
+	double S = 0;
+	int i;
+	if(!T){
+		puts("Erreur");
+		return(0);
+	}
+	for(i=0;i<taille;i++){
+		S=S+T[i];
+	}
+	return(S/taille);
+}
