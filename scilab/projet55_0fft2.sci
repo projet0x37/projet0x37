@@ -371,14 +371,21 @@ function [T,nbiteration]=boucle(z,x,n,Bmin,nmax,N,fs,u,l,thresvo,thresvi,k0,k1,r
     end
     
     SR=log(xv/Nv)
-    
+    li=0
     while b==1
         L=lvector(Bmin,nmax,z,N,fs,u,l)
         figure()
+        
+        if i~=1 then
+            for li=1:i-1
+                L(T(li))=0
+            end
+        end
         plot(L)
         [t,k]=max(L)
         disp(b,'b')
         disp(k*fs/N,'F0')
+        disp(k,'k')
         if i==1 then
             v0=4*log(t)+SR
             disp(v0,'v0')
