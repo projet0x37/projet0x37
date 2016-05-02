@@ -23,4 +23,5 @@ void fosup(frame Zsmoothed, frame Z, int taille );
 int processing_init(frame X, frame Lmax,frame Npow, int taille, double threshold,int k0,int k1);
 int iteration_checking(frame X, frame Lmaxi,frame Npow, int taille,double treshold, int k0, int k1);
 int F0fromL(double* L, int taille);
+double mean(double* T, int taille);
 #endif /* fonctions_h */
