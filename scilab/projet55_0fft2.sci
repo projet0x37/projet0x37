@@ -16,6 +16,10 @@ function[] = projet55_0fft(c,a,n,u,nb,meanfactor,v0,v1)
     //4 >> 2**15  743 ms
     
     
+    //Valeurs expérimentales de V0 et Vi selon les morceaux
+    // pour l'andantino des contes de la vielle grand mère de Prokofiev joué par Matti Raekallio chez Ondine - Naxos of America, les valeurs seuil de V0 et Vi trouvées sont 0.2 et 14.71
+    
+    
     select a
     case 1 then
         d=2**12
@@ -336,7 +340,7 @@ function zsmoothed = lissage(z,fs,N,ratio,k)
         mb=mean(b(m0:m2))
         m=mz/mb
         
-        if i == k then
+        if i == k & m~=0 then
             nfactor=z(i)/m
         end
         m=m*nfactor
@@ -380,7 +384,14 @@ function [T,nbiteration]=boucle(z,x,n,Bmin,nmax,N,fs,u,l,thresvo,thresvi,k0,k1,r
         
         if i~=1 then
             for li=1:i-1
-                L(T(li))=0
+                ksup=T(li)
+                ksup0=ceil(ksup-ksup**(1/12)/2)
+                ksup1=floor(ksup+ksup**(1/12)/2)
+                for ks = ksup0:ksup1
+                    if abs(ksup-ks)<4 then
+                        L(ks)=0
+                    end
+                end
             end
         end
         plot(L)
