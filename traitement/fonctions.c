@@ -145,3 +145,65 @@ double mean(double* T, int taille){    //Calcul de moyenne	//TestÃ©e et ApprouvÃ
 	}
 	return(S/taille);
 }
+
+
+ 
+double round(double value) {
+     return floor(value + 0.5);
+}
+ 
+
+
+double * functionBW (double Bmin,int N, double fs, double l, double kb,double ratio){ // [b,m0,m2]=BW(Bmin,N,fs,l,kb,ratio) 
+	double * M2 ;
+	double * M0 ;
+	double * b = zeros(1,l);
+	double kmin = Bmin*N/fs;
+	double kb=round(kb);
+	double m1,b1,a1,b2,a2,i ;
+	if (kb*ratio > kmin) {
+		*M0 = kb;
+		*M2 = *M0+(*M0)*ratio;
+		m1 = (*M0+*M2)/2;
+		b1 = *M0/(*M0-m1);
+		a1 = 1/(m1-*M0);
+		b2 = *M2/(*M2-m1);
+		a2 = 1/(m1-*M2);
+		i = *M0;
+		while (i <= m1 && i<=l){
+			b(i) = a1*i+b1;
+			i=i+1;
+		}
+		while (i <= m2 && i<=l){
+			b(i) = a2*i+b2;
+			i=i+1;
+		}
+	}
+	else {
+		*M0 = kb;
+		m1 = kb + kmin/2;
+		*M2 = kb + kmin;
+		b1 = *M0/(*M0-m1);
+		a1 = 1/(m1-*M0);
+		b2 = *M2/(*M2-m1);
+		a2 = 1/(m1-*M2);
+		i = *M0;
+		while (i <= m1 && i<=l){
+			b(i) = a1*i+b1;
+			i=i+1;
+		}
+
+		while (i < *M2 && i<=l){
+			b(i) = a2*i+b2;
+			i=i+1;
+		}
+	}
+
+	*M2=i-1;
+	return b ;
+}
+
+
+
+
+
