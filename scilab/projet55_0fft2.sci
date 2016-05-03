@@ -49,13 +49,15 @@ function[] = projet55_0fft(c,a,n,u,nb,meanfactor,v0,v1)
     w = [0:N-1]
     w = (0.54-0.46*cos(2*%pi*w/N))
     
-    // Passage du signal par la fenêtre de Hamming
-    y(1,:) = y(1,:).*w
-    
-    //Affichage temporel du signal
+    //Affichage temporel du signal sans la fenétre de hamming, cela permet de voir si une note est jouée ou non
     figure(0)
     subplot(2,1,1)
     plot(t,y(1,:))
+    
+    // Passage du signal par la fenêtre de Hamming
+    y(1,:) = y(1,:).*w
+    
+    
     
     //Calcul des transformées de Fourier rapide du signal
     yfft1 = fft(y(1,:))
