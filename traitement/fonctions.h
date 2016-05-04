@@ -24,4 +24,7 @@ int processing_init(frame X, frame Lmax,frame Npow, int taille, double threshold
 int iteration_checking(frame X, frame Lmaxi,frame Npow, int taille,double treshold, int k0, int k1);
 int F0fromL(double* L, int taille);
 double mean(double* T,double m0,double m2);
+double round(double value);
+double* zeros(int l);
+double* functionBW (double Bmin,int N, double fs, int l, double kb, double ratio, double* M0, double* M2);
 #endif /* fonctions_h */
