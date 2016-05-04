@@ -7,42 +7,81 @@
 #include "textexport.h"
 #include "../midi/midi.h"
 
-double * Y_extraction(double * X, int taille){
-    int k0 = 0, k1 = 1000; int l = k0;
-    double g, somme = 0;
-    int i;
-    while(l<k1){
-        somme += pow(X[l],1/3);
-        l += 1;                            //On prend arbitrairement un pas de 1Hz
-    }
-    somme = somme/(k1-k0+1);
-    g = pow(somme,3);
-    printf("g = %lf\n",g);
-    double * Y = NULL;
-    Y = calloc(taille, sizeof(Y));
-    for(i=k0;i<k1;i++){
-        *(Y+i-k0) = log(1 + 1/g*(*(X+i-k0)));
-        printf("%lf\n", *(Y+i-k0));
-    }
-    return Y;
-    }
+double * creertab( int n) {
+	double * tab;
+	double fo = 32.70;
+	int i;
+	tab=calloc(n,sizeof(*tab));
+	for (i=0;i<n;i++){
+		tab[i]=fo*pow(2,(double)i/12);}
+	return tab;}
+  
+double incertitude ( int n ) {
+	double fo= 32.70;
+	double i ;
+	i= (fo*pow(2,(float)n/12)*(pow(2,(float)1/12)-1))/2 ;
+	return i ;
+	}
 
-double * moving_average(double * Y, double largeur, int taille){
-    double * movingA = calloc(taille, sizeof(*movingA));
-    int i,j;
-    for(i=0;i<=taille;i++){
-        if(i-largeur/2 < 0 || i+largeur/2 > taille){
-            movingA[i] = Y[i];
-        }
-        else{
-            double localA = 0;
-            for(j=i-largeur/2;j<=i+largeur/2;j++){
-                localA += Y[j];
-            }
-            movingA[i] = localA/largeur;
-        }
-    }
-    return movingA;
+    
+
+
+char correspondancenote( float fech , int n ){
+	int j=0;
+	char note = -1;// valeur par défaut, si elle vaut -1 la correspondance note> fréquence n'a pas été concluante
+	double * tab = creertab(128) ;
+	for(j=0;j<128;j++) {
+		if ( abs(tab[j]-fech) < incertitude(j) ){
+			note = j;
+		}
+	}
+	return note;
+}
+
+double * Y_extraction(double * X, int taille, int k0 , int k1){
+	int l = k0;
+	double g, somme = 0;
+	int i;
+	double * Y = NULL;
+
+	while(l<k1){
+		somme += pow(X[l],1/3);
+		l += 1;
+	}
+
+	somme = somme/(k1-k0+1);
+	g = pow(somme,3);
+
+	printf("g = %lf\n",g);
+
+	Y = calloc(taille, sizeof(*Y));
+
+	for(i=0;i<taille;i++){
+		Y[i] = log(1 + X[i]/g);
+		//printf("%lf\n", Y[i]);
+	
+	}
+	return Y;
+	
+}
+
+double * moving_average(double * Y, double ratio, int taille){
+	double * movingA = calloc(taille, sizeof(*movingA));
+	double localA = 0;
+	int i,j;
+	for(i=0;i<=taille;i++){
+		if(i-ratio*i/2 < 0 || i+ratio*i/2 > taille){
+			movingA[i] = Y[i];
+		}
+		else{
+			double localA = 0;
+			for( j=i-round(ratio*i/2) ; j<=i+round(ratio*i/2) ; j++ ){
+				localA += Y[j];
+			}
+		movingA[i] = localA/(ratio*i);
+		}
+	}
+	return movingA;
 
 }
 
@@ -52,17 +91,8 @@ double * Z_calc(double * Y, double * N, int taille){
     for(i=0;i<taille;i++){
         Z[i] = ((Y[i]-N[i])> 0) ? Y[i]-N[i] : 0;
     }
-    for(i=0;i<=80;i++){
-        *(Z+i) = 0;
-    }
-    for(i=930;i<=1000;i++){
-        *(Z+i) = 0;
-    }
     return Z;
 }
-
-
-typedef double* frame ;
 
 
 void fosup(frame Zsmoothed , frame Z, int taille ){
@@ -204,6 +234,8 @@ double* functionBW (double Bmin,int N, double fs, int l, double kb, double ratio
 	*M2=i-1;
 	return b ;
 }
+
+
 
 
 

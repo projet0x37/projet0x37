@@ -25,17 +25,17 @@ int main(int argc, char** args){
 
 	printf("Le fichier audio dure %lf s, en conséquence le tableau Tnote à %d éléments\n",duration,sizeTmax);
 
-	sizeTmax=2*floor(size/4096) + 1;
+	sizeTmax=2*floor(size/4096) + 2; // on prend une taille suffisamment large
 
 	T=calloc( sizeTmax , sizeof(*T) );
 
 	initTnote( T , sizeTmax );
 
-	processing( T , datain , sizeTmax );
+	mainprocessing( T , datain , sizeTmax );
 	
 	printf("Entrez une résolution temporelle minimum pour la partition, sachant que la durée de la porte la plus petite utilisée est %lf\n",
 
-	T=resizeTnote( T , &sizeTmax , timeresolutionms );
+	T=resizeTnote( T , & sizeTmax , timeresolutionms );
 
 	mainmidi("outputmidi",T,sizeTmax);
 
