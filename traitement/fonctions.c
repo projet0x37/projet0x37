@@ -153,11 +153,11 @@ double mean(double* T,double m0,double m2){   //Calcul la moyenne entre m0 et m2
 
 
  
-double round(double value) {
+double round(double value) {					//Testée et approuvée
      return floor(value + 0.5);
 }
  
-double* zeros(int l){
+double* zeros(int l){						//Testée et approuvée
 	int i;
 	double* t = calloc(l,sizeof(*t));
 	for(i=0;i<l;i++){
@@ -166,7 +166,7 @@ double* zeros(int l){
 	return(t);
 }
 
-double* functionBW (double Bmin,int N, double fs, int l, double kb, double ratio, double* M0, double* M2){ // [b,m0,m2]=BW(Bmin,N,fs,l,kb,ratio)
+double* functionBW (double Bmin,int N, double fs, int l, double kb, double ratio, double* M0, double* M2){ // [b,m0,m2]=BW(Bmin,N,fs,l,kb,ratio)  //Testée et approuvée
 	int i;
 	double* b = zeros(l);
 	double kmin = (double)Bmin*N/fs;
