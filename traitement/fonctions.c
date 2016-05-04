@@ -12,6 +12,7 @@
 #include "fonctions.h"
 #include <stdlib.h>
 #include <time.h>
+#include "textexport.h"
 
 double frand_a_b(double a, double b){
     return ( rand()/(double)RAND_MAX ) * (b-a) + a;
@@ -156,17 +157,23 @@ double round(double value) {
      return floor(value + 0.5);
 }
  
+double* zeros(int l){
+	int i;
+	double* t = calloc(l,sizeof(*t));
+	for(i=0;i<l;i++){
+		t[i]=0;
+	}
+	return(t);
+}
 
-
-double * functionBW (double Bmin,int N, double fs, double l, double kb,double ratio){ // [b,m0,m2]=BW(Bmin,N,fs,l,kb,ratio) 
-	double * M2 ;
-	double * M0 ;
-	double * b = zeros(1,l);
-	double kmin = Bmin*N/fs;
-	double kb=round(kb);
-	double m1,b1,a1,b2,a2,i ;
-	if (kb*ratio > kmin) {
-		*M0 = kb;
+double* functionBW (double Bmin,int N, double fs, int l, double kb, double ratio, double* M0, double* M2){ // [b,m0,m2]=BW(Bmin,N,fs,l,kb,ratio)
+	int i;
+	double* b = zeros(l);
+	double kmin = (double)Bmin*N/fs;
+	double kb1=round(kb);
+	double m1,b1,a1,b2,a2 ;
+	if (kb1*ratio > kmin) {
+		*M0 = kb1;
 		*M2 = *M0+(*M0)*ratio;
 		m1 = (*M0+*M2)/2;
 		b1 = *M0/(*M0-m1);
@@ -174,35 +181,34 @@ double * functionBW (double Bmin,int N, double fs, double l, double kb,double ra
 		b2 = *M2/(*M2-m1);
 		a2 = 1/(m1-*M2);
 		i = *M0;
-		while (i <= m1 && i<=l){
-			b(i) = a1*i+b1;
+		while (i <= m1 && i<l){      
+			b[i] = a1*i+b1;
 			i=i+1;
 		}
-		while (i <= m2 && i<=l){
-			b(i) = a2*i+b2;
+		while (i <= *M2 && i<l){
+			b[i] = a2*i+b2;
 			i=i+1;
 		}
 	}
 	else {
-		*M0 = kb;
-		m1 = kb + kmin/2;
-		*M2 = kb + kmin;
+		*M0 = kb1;
+		m1 = kb1 + kmin/2;
+		printf("m1 = %lf",m1);
+		*M2 = kb1 + kmin;
 		b1 = *M0/(*M0-m1);
 		a1 = 1/(m1-*M0);
 		b2 = *M2/(*M2-m1);
 		a2 = 1/(m1-*M2);
 		i = *M0;
-		while (i <= m1 && i<=l){
-			b(i) = a1*i+b1;
+		while (i <= m1 && i<l){	
+			b[i] = a1*i+b1;	
 			i=i+1;
 		}
-
-		while (i < *M2 && i<=l){
-			b(i) = a2*i+b2;
+		while (i < *M2 && i<l){	
+			b[i] = a2*i+b2;       
 			i=i+1;
 		}
 	}
-
 	*M2=i-1;
 	return b ;
 }
