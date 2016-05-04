@@ -27,7 +27,7 @@ double * channelread(int nbchannels, double *data ,int frames,int channel){
 	return datachannel;
 }
 	
-double * mainaudio(char * infilename,int * taille){
+double * mainaudio(char * infilename,int * taille,double *samplerate){
 	SNDFILE* infile;
 	SF_INFO sfinfo;
 	double * data = NULL;
@@ -44,10 +44,12 @@ double * mainaudio(char * infilename,int * taille){
 	data=calloc( sfinfo.frames , sizeof(*data) );
 	sf_read_double(infile , data, sfinfo.frames) ; // stock les données infile dans le tableau data
 	sf_close( infile); 
-	printf("Quelle canal ? , choisir entre 0 et %d", (sfinfo.channels-1) );
+	printf("Quelle canal ? , choisir entre 0 et %d\n", (sfinfo.channels-1) );
 	scanf( "%d", &c );
 	datac = channelread(sfinfo.channels,data, sfinfo.frames, c);
+
 	*taille= sfinfo.frames / sfinfo.channels;
+	*samplerate = sfinfo.samplerate;
 	return datac;
 }
 

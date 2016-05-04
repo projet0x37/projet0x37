@@ -3,6 +3,6 @@
 
 
 double * channelread(int nbchannels, double *data ,int frames,int channel);
-double * mainaudio(char * infilename,int * taille);
+double * mainaudio(char * infilename,int * taille,double *samplerate);
 
 
