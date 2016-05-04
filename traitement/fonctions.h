@@ -27,5 +27,6 @@ void initTnote( Tnote T , int sizeTmax );
 int frameprocessing( tabchord C , double * frame , int sizeframe , double time);
 void mainprocessing( Tnote  T , double * datain , int sizeTmax , double samplerate);
 Tnote  resizeTnote( Tnote  T , int sizeTmax , double timeresolution );
+double* Z_smoothing(double* z, int taille,double fs,int N,double ratio,int k);
 
 #endif /* fonctions_h */
