@@ -209,3 +209,25 @@ double* functionBW (double Bmin,int N, double fs, int l, double kb, double ratio
 
 
 
+
+
+
+double npow( double* moyennex, int k1,int k0){
+	int i;
+	double g=0;
+	for (i=k0;i<k1;i++){
+		g+=pow(moyennex[i],1/3);
+	}
+	g=g/(k1-k0+1);
+	g=pow(g,3);
+	double* Npow=zeros(k1-k0+1);
+	for(i=k0;i<k1;i++){
+		Npow[i]=exp(moyennex[i]-1)*g;
+	}
+}
+
+
+
+
+
+
