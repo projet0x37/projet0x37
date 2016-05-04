@@ -1,22 +1,11 @@
-//
-//  fonctions.c
-//  A man named Klapury
-//
-//  Created by Vincent Maladiere on 15/04/16.
-//  Copyright © 2016 Vincent Maladiere. All rights reserved.
-//
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-#include "fonctions.h"
 #include <stdlib.h>
 #include <time.h>
+#include "fonctions.h"
 #include "textexport.h"
-
-double frand_a_b(double a, double b){
-    return ( rand()/(double)RAND_MAX ) * (b-a) + a;
-}
+#include "../midi/midi.h"
 
 double * Y_extraction(double * X, int taille){
     int k0 = 0, k1 = 1000; int l = k0;

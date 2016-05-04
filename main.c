@@ -8,13 +8,14 @@
 
 int main(int argc, char** args){
 	double * datain;
-	Tnote * T;
+	Tnote T;
 	int  size;
 	double duration;
 	double samplerate;
 	int minframelength = 4096 ;
 	double minframeduration;
 	int sizeTmax;
+	double timeresolutionsms;
 
 
 	datain=mainaudio("input.wav",&size,&samplerate);
@@ -26,9 +27,15 @@ int main(int argc, char** args){
 
 	sizeTmax=2*floor(size/4096) + 1;
 
-	T=calloc(sizeTmax,sizeof(*T));
+	T=calloc( sizeTmax , sizeof(*T) );
+
+	initTnote( T , sizeTmax );
+
+	processing( T , datain , sizeTmax );
 	
-	process(T,datain,sizeTmax);
+	printf("Entrez une résolution temporelle minimum pour la partition, sachant que la durée de la porte la plus petite utilisée est %lf\n",
+
+	T=resizeTnote( T , &sizeTmax , timeresolutionms );
 
 	mainmidi("outputmidi",T,sizeTmax);
 
