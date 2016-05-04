@@ -235,7 +235,61 @@ double* functionBW (double Bmin,int N, double fs, int l, double kb, double ratio
 	return b ;
 }
 
+double* Z_smoothing(double* z, int taille,double fs,int N,double ratio,int k){
+	int s = taille;
+	double* zsmoothed = calloc(s,sizeof(*zsmoothed));
+	int i = k;
+	double nfactor;		//facteur permettant de réhausser la moyenne pondérée (on suppose que les fondamentales sont détectées de manière croissante : il 						n'y à alors pas d'inconvénient à supprimer celle détectée).
+	double* M0 = calloc(1,sizeof(*M0));
+	double* M2 = calloc(1,sizeof(*M2));
+	double m0;
+	double m2;
+	double mz;
+	double mb;
+	double m;
+	double min;
+	int j;
+	int j0;
+       	int j1;
+	double* zb = calloc(s,sizeof(*zb));
+	double kb = i-i*ratio/2;
+	double rb = 2*ratio/(2-ratio);
+	double* b = calloc(s,sizeof(*b));
+	b = functionBW(100,N,fs,s,kb,ratio,M0,M2); // la largeur est d'un octave par rapport à l'harmonique , on a fixé la largeur minimale à 								100Hz , on changera peut être à 0 Hz , à voir ...
+	
 
+	while(i+k<=s){
+		for(i=0;i<s;i++){
+			zb[i]=z[i]*b[i];
+		}
+		m0 = *M0;            
+		m2 = *M2;
+		mz = mean(zb,m0,m2);
+		mb = mean(b,m0,m2);
+		m = mz/mb;
+		if(i==k){
+			nfactor = (double)z[i]/m;
+		}
+		m = m*nfactor;
+        	j0 = floor(i-pow(i,1/12)*(3/4));
+       		j1 = floor(i+pow(i,1/12)*(3/4))+1;
+		for(j=j0;j<j1+1;j++){
+            		if(fabs(j-i)<4){
+				min = m;
+				if(zb[j]<m){
+					min = zb[j];
+				}
+                		zsmoothed[j]=min; 	  // a revoir , valable pour les moyennes hautes fréquences , à ajuster pour les petites
+			}
+		}
+		i=i+k;
+		
+	}
+	for(i=0;i<s;i++){
+		zsmoothed[i] = z[i]-zsmoothed[i];
+	}
+	return(zsmoothed);
+}
 
 
 
