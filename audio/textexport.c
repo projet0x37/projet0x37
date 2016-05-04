@@ -14,4 +14,17 @@ void textexport(char * textname,double * data,int taille, int taille_utilisateur
 	fclose(f1);
 }
 	
-	
+double* tabexportfromtext(char * textname,int nb){
+	double * t = calloc(nb,sizeof(*t));	
+	int i=0;
+	double a;
+	int taille=0;
+	FILE * ft = fopen(textname,"r");
+	while(fscanf(ft,"%lf",&a)!=0 & i < nb){
+		t[i]=a;
+		taille++;
+		i++;
+	}	
+	fclose(ft);
+	return t;
+}	
