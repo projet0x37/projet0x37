@@ -1,7 +1,3 @@
-#gcc -c audioprocess.c -I .
-#gcc -c textexport.c
-#gcc *.o -L. -lsndfile -lm
-
 CC=gcc
 CFLAGS= -c -g -Wall
 LFLAGS = -L audio/. audio/libsndfile.a -lm
