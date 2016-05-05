@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "textexport.h"
 
 
@@ -20,7 +21,7 @@ double* tabexportfromtext(char * textname,int nb){
 	double a;
 	int taille=0;
 	FILE * ft = fopen(textname,"r");
-	while(fscanf(ft,"%lf",&a)!=0 & i < nb){
+	while(fscanf(ft,"%lf",&a)!=0 && i < nb){
 		t[i]=a;
 		taille++;
 		i++;

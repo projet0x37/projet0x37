@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include "fonctions.h"
-#include "textexport.h"
+#include "../textexport/textexport.h"
 #include "../midi/midi.h"
 
 double * creertab( int n) {
@@ -74,7 +74,7 @@ double * moving_average(double * Y, double ratio, int taille){
 			movingA[i] = Y[i];
 		}
 		else{
-			double localA = 0;
+			localA = 0;
 			for( j=i-round(ratio*i/2) ; j<=i+round(ratio*i/2) ; j++ ){
 				localA += Y[j];
 			}
@@ -117,7 +117,8 @@ int processing_init(frame X, frame Lmax,frame Npow, int taille, double threshold
 		}
 	vo=4*log(Lmax1)+log(x)-log(N) ;
 	if (vo>threshold) return 1;
-	if (vo<threshold) return 0;
+	if (vo<=threshold) return 0;
+	return -1;
 }
 
 int iteration_checking(frame X, frame Lmaxi,frame Npow, int taille,double threshold, int k0, int k1){
@@ -135,8 +136,8 @@ int iteration_checking(frame X, frame Lmaxi,frame Npow, int taille,double thresh
 		}
 	vo=1.8*log(Lmax1)+log(x)-log(N) ;
 	if (vo>threshold) return 1;
-	if (vo<threshold) return 0;
-	
+	if (vo<=threshold) return 0;
+	return -1;
 }
 
 int F0fromL(double* L, int taille){			//Testée et approuvée
@@ -235,15 +236,12 @@ double* functionBW (double Bmin,int N, double fs, int l, double kb, double ratio
 	return b ;
 }
 
-double* Z_smoothing(double* z, int taille,double fs,int N,double ratio,int k){		//Testée
-	int s = taille;
-	double* zsmoothed = calloc(s,sizeof(*zsmoothed));
+double* Z_smoothing(double* z, int taille,double fs,int N,double ratio,int k){		//  NON Testée
+	double * zsmoothed = calloc(taille,sizeof(*zsmoothed));
 	int i = k;
 	double nfactor;		//facteur permettant de réhausser la moyenne pondérée (on suppose que les fondamentales sont détectées de manière croissante : il 						n'y à alors pas d'inconvénient à supprimer celle détectée).
 	double* M0 = calloc(1,sizeof(*M0));
 	double* M2 = calloc(1,sizeof(*M2));
-	double m0;
-	double m2;
 	double mz;
 	double mb;
 	double m;
@@ -251,28 +249,33 @@ double* Z_smoothing(double* z, int taille,double fs,int N,double ratio,int k){		
 	int j;
 	int j0;
        	int j1;
-	double* zb = calloc(s,sizeof(*zb));
-	double kb = i-i*ratio/2;
-	double rb = 2*ratio/(2-ratio);
-	double* b = calloc(s,sizeof(*b));
-	b = functionBW(100,N,fs,s,kb,ratio,M0,M2); // la largeur est d'un octave par rapport à l'harmonique , on a fixé la largeur minimale à 								100Hz , on changera peut être à 0 Hz , à voir ...
-	
+	double* zb = calloc(taille,sizeof(*zb));
+	double kb;
+	double rb;
+	double* b = calloc(taille,sizeof(*b));
 
-	while(i+k<=s){
-		for(i=0;i<s;i++){
+	while(i+k < taille){
+
+		kb = i-i*ratio/2;
+		rb = 2*ratio/(2-ratio); // la fonction crée une porte triangulaire à partir de kb, ici on veut qu'elle soit centrée sur i, c'est pourquoi on fait intervenir un ratio "rb" différent de "ratio"
+		b = functionBW(100,N,fs,taille,kb,rb,M0,M2); // largeur minimale de 100hz ( à voir ) , fixé par kb*ratio sinon.
+
+		for(i=0;i<taille;i++){
 			zb[i]=z[i]*b[i];
 		}
-		m0 = *M0;            
-		m2 = *M2;
-		mz = mean(zb,m0,m2);
-		mb = mean(b,m0,m2);
+
+		mz = mean(zb,*M0,*M2);
+		mb = mean(b,*M0,*M2);
 		m = mz/mb;
-		if(i==k){
+
+		if(i==k && m!=0){
 			nfactor = (double)z[i]/m;
 		}
+
 		m = m*nfactor;
         	j0 = floor(i-pow(i,1/12)*(3/4));
        		j1 = floor(i+pow(i,1/12)*(3/4))+1;
+
 		for(j=j0;j<j1+1;j++){
             		if(fabs(j-i)<4){
 				min = m;
@@ -285,7 +288,7 @@ double* Z_smoothing(double* z, int taille,double fs,int N,double ratio,int k){		
 		i=i+k;
 		
 	}
-	for(i=0;i<s;i++){
+	for(i=0;i<taille;i++){
 		zsmoothed[i] = z[i]-zsmoothed[i];
 	}
 	return(zsmoothed);
@@ -295,21 +298,20 @@ double* Z_smoothing(double* z, int taille,double fs,int N,double ratio,int k){		
 
 
 
-<<<<<<< HEAD
-=======
 
-double npow( double* moyennex, int k1,int k0){
+double * npow( double* moyennex, int k1,int k0,int taille){
 	int i;
 	double g=0;
+	double* Npow=zeros(taille);
 	for (i=k0;i<k1;i++){
 		g+=pow(moyennex[i],1/3);
 	}
 	g=g/(k1-k0+1);
 	g=pow(g,3);
-	double* Npow=zeros(k1-k0+1);
 	for(i=k0;i<k1;i++){
 		Npow[i]=exp(moyennex[i]-1)*g;
 	}
+	return Npow;
 }
 
 
@@ -317,4 +319,4 @@ double npow( double* moyennex, int k1,int k0){
 
 
 
->>>>>>> 05aea81147204afbd9702bb960169edcdc2b46c0
+
