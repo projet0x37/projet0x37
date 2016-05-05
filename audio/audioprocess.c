@@ -16,7 +16,7 @@ The library we use to process audio files (libsndfile) is avaible on https://git
 double * channelread(int nbchannels, double *data ,int frames,int channel){
 	double * datachannel=NULL;
 	int i=0;
-	int l=frames/nbchannels;
+	int l=frames;
 	datachannel=calloc(l,sizeof(double));
 	if(!datachannel){
 	  return NULL;
