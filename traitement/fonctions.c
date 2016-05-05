@@ -235,7 +235,7 @@ double* functionBW (double Bmin,int N, double fs, int l, double kb, double ratio
 	return b ;
 }
 
-double* Z_smoothing(double* z, int taille,double fs,int N,double ratio,int k){
+double* Z_smoothing(double* z, int taille,double fs,int N,double ratio,int k){		//Testée
 	int s = taille;
 	double* zsmoothed = calloc(s,sizeof(*zsmoothed));
 	int i = k;
