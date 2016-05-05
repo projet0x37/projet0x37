@@ -41,14 +41,14 @@ double * mainaudio(char * infilename,int * taille,double *samplerate){
 
 	printf("samples:%ld, samplerate:%d, channels:%d, format:0x%x\n",sfinfo.frames,sfinfo.samplerate,sfinfo.channels,sfinfo.format);
 
-	data=calloc( sfinfo.frames , sizeof(*data) );
-	sf_read_double(infile , data, sfinfo.frames) ; // stock les données infile dans le tableau data
+	data=calloc( sfinfo.channels*sfinfo.frames , sizeof(*data) );
+	sf_read_double(infile , data, sfinfo.channels*sfinfo.frames) ; // stock les données infile dans le tableau data
 	sf_close( infile); 
 	printf("Quelle canal ? , choisir entre 0 et %d\n", (sfinfo.channels-1) );
 	scanf( "%d", &c );
-	datac = channelread(sfinfo.channels,data, sfinfo.frames, c);
-
-	*taille= sfinfo.frames / sfinfo.channels;
+	datac = channelread( sfinfo.channels , data , sfinfo.frames , c);
+	free(data);
+	*taille= sfinfo.frames;
 	*samplerate = sfinfo.samplerate;
 	return datac;
 }
