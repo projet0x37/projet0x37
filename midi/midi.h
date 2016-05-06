@@ -9,8 +9,10 @@
                     ((num>>8)&0xff00) | // move byte 2 to byte 1
                     ((num<<24)&0xff000000); // byte 0 to byte 3*/
 
+#define SIZE_TABCHORD 50
+
 typedef struct{
-	chord tabchord[31]; //accord dont les notes sont associées à des durées , un tableau de notes avec leur durée
+	chord tabchord[SIZE_TABCHORD]; //accord dont les notes sont associées à des durées , un tableau de notes avec leur durée
 	double temps;
 	}notes, *Tnote;
 

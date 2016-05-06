@@ -6,10 +6,16 @@
 #include "fonctions.h"
 #include "../textexport/textexport.h"
 #include "../midi/midi.h"
+#include <fftw3.h>
 
+
+#define F0 27.5000
+#define OFFSETMIDI 21
+#define RATIOLISSAGE 1
+#define RATIOBANDE 2./3.
 double * creertab( int n) {
 	double * tab;
-	double fo = 32.70;
+	double fo = F0;
 	int i;
 	tab=calloc(n,sizeof(*tab));
 	for (i=0;i<n;i++){
@@ -17,7 +23,7 @@ double * creertab( int n) {
 	return tab;}
   
 double incertitude ( int n ) {
-	double fo= 32.70;
+	double fo= F0;
 	double i ;
 	i= (fo*pow(2,(float)n/12)*(pow(2,(float)1/12)-1))/2 ;
 	return i ;
@@ -58,15 +64,13 @@ double * Y_extraction(double * X, int taille, int k0 , int k1){
 
 	for(i=0;i<taille;i++){
 		Y[i] = log(1 + X[i]/g);
-		//printf("%lf\n", Y[i]);
 	
 	}
 	return Y;
 	
 }
 
-double * moving_average(double * Y, double ratio, int taille){
-	double * movingA = calloc(taille, sizeof(*movingA));
+void moving_average(double * Y, double ratio, int taille , frame movingA){
 	double localA = 0;
 	int i,j;
 	for(i=0;i<=taille;i++){
@@ -86,58 +90,54 @@ double * moving_average(double * Y, double ratio, int taille){
 }
 
 double * Z_calc(double * Y, double * N, int taille){
-    int i;
-    double * Z = calloc(taille,sizeof(*Z));
-    for(i=0;i<taille;i++){
-        Z[i] = ((Y[i]-N[i])> 0) ? Y[i]-N[i] : 0;
-    }
-    return Z;
-}
-
-
-void fosup(frame Zsmoothed , frame Z, int taille ){
 	int i;
+	double * Z = calloc(taille,sizeof(*Z));
+	if(!Z) return NULL;
 	for(i=0;i<taille;i++){
-		Z[i]=Z[i]-Zsmoothed[i] ; }
-
+		Z[i] = ((Y[i]-N[i])> 0) ? Y[i]-N[i] : 0;
 	}
+	return Z;
+}
 
-int processing_init(frame X, frame Lmax,frame Npow, int taille, double threshold,int k0,int k1){
-	double Lmax1=0;	
-	int i;
-	double x=0;
-	double N=0;
-	double vo=0;
-	for(i=0;i<taille;i++){
-		Lmax1+=Lmax[i] ;
-		}
-	for(i=k0;i<k1;i++){
-		x+=X[i] ;
-		N+=Npow[i];
-		}
-	vo=4*log(Lmax1)+log(x)-log(N) ;
-	if (vo>threshold) return 1;
-	if (vo<=threshold) return 0;
+frame noisesup( frame X , int k0 , int k1 , int taille , double ratio, frame N){
+	frame Y;
+	frame Z;
+	Y = Y_extraction( X , taille , k0 , k1);
+	moving_average( Y , ratio , taille , N);
+	Z = Z_calc( Y , N , taille );
+	free(Y);
+	return Z;
+}
+
+int processing_init( double Lmax , double SNR , double threshold ){
+	double v0=0;
+	v0=4*log(Lmax)+log(SNR);
+	if (v0>threshold) return 1;
+	if (v0<=threshold) return 0;
 	return -1;
 }
 
-int iteration_checking(frame X, frame Lmaxi,frame Npow, int taille,double threshold, int k0, int k1){
-	double Lmax1=0;	
-	int i;
+int iteration_checking( double Lmaxi , double SNR , double threshold ){
+	double vi=0;
+	vi=1.8*log(Lmaxi)-log(SNR);
+	if (vi>threshold) return 1;
+	if (vi<=threshold) return 0;
+	return -1;
+}
+
+double SNR_calc( frame X , frame N , int sizeframe, int k0, int k1 ){
+	frame Npow=npow(N,k1,k0,sizeframe);
 	double x=0;
 	double N=0;
-	double vo=0;
-	for(i=0;i<taille;i++){
-		Lmax1+=Lmaxi[i] ;
-		}
+	double SNR;
 	for(i=k0;i<k1;i++){
 		x+=X[i] ;
 		N+=Npow[i];
 		}
-	vo=1.8*log(Lmax1)+log(x)-log(N) ;
-	if (vo>threshold) return 1;
-	if (vo<=threshold) return 0;
-	return -1;
+	
+	if(N)SNR = x/N;
+	else return 0;
+	return SNR;
 }
 
 int F0fromL(double* L, int taille){			//Testée et approuvée
@@ -150,14 +150,14 @@ int F0fromL(double* L, int taille){			//Testée et approuvée
 	}
 	for(i=0;i<taille;i++){
 		if(L[i]>M){
-			M=L[i];
-			fM = i+1;
+			M = L[i];
+			fM = i;
 		}
 	}
 	return(fM);
 }
 
-double mean(double* T,double m0,double m2){   //Calcul la moyenne entre m0 et m2		//Testée et Approuvée
+double mean(double* T,double m0,double m2){   //Calcul la moyenne entre m0 et m2 //Testée et Approuvée
 	double S = 0;
 	int i;
 	if(!T){
@@ -176,7 +176,7 @@ double mean(double* T,double m0,double m2){   //Calcul la moyenne entre m0 et m2
 
 
  
-double round(double value) {					//Testée et approuvée
+int round(double value) {					//Testée et approuvée
      return floor(value + 0.5);
 }
  
@@ -189,12 +189,12 @@ double* zeros(int l){						//Testée et approuvée
 	return(t);
 }
 
-double* functionBW (double Bmin,int N, double fs, int l, double kb, double ratio, double* M0, double* M2){ // [b,m0,m2]=BW(Bmin,N,fs,l,kb,ratio)  //Testée et approuvée
+double* functionBW (double kmin,int N, double fs, int l, double kb, double* M0, double* M2){   //Testée et approuvée
 	int i;
 	double* b = zeros(l);
-	double kmin = (double)Bmin*N/fs;
 	double kb1=round(kb);
 	double m1,b1,a1,b2,a2 ;
+	double ratio=RATIOBANDE;
 	if (kb1*ratio > kmin) {
 		*M0 = kb1;
 		*M2 = *M0+(*M0)*ratio;
@@ -216,7 +216,7 @@ double* functionBW (double Bmin,int N, double fs, int l, double kb, double ratio
 	else {
 		*M0 = kb1;
 		m1 = kb1 + kmin/2;
-		printf("m1 = %lf",m1);
+		printf("m1 = %lf\n",m1);
 		*M2 = kb1 + kmin;
 		b1 = *M0/(*M0-m1);
 		a1 = 1/(m1-*M0);
@@ -299,24 +299,105 @@ double* Z_smoothing(double* z, int taille,double fs,int N,double ratio,int k){		
 
 
 
-double * npow( double* moyennex, int k1,int k0,int taille){
+double * npow( double* meanx, int k1,int k0,int taille){
 	int i;
 	double g=0;
 	double* Npow=zeros(taille);
 	for (i=k0;i<k1;i++){
-		g+=pow(moyennex[i],1/3);
+		g+=pow(meanx[i],(double)1/3);
 	}
 	g=g/(k1-k0+1);
 	g=pow(g,3);
 	for(i=k0;i<k1;i++){
-		Npow[i]=exp(moyennex[i]-1)*g;
+		Npow[i]=exp(meanx[i]-1)*g;
 	}
 	return Npow;
 }
 
 
 
+void initTnote( Tnote T , int sizeTmax){
+	int i;
+	if(!T) return EXIT_FAILURE;
+	for(i=0;i<sizeTmax;i++){
+		Tnote[i].temps=-1.0
+	}
+}
 
+frame short_time_DSP( frame x , int sizeframe){ // il est possible d'optimiser l'utilisation des plans p
+	fftw_complex * out;
+	fftw_plan p;
+	frame DSP;
+	if( !x ){
+		printf("short_time_DSP() frame x = NULL\n");
+		return NULL;
+	}
+	
+	sizeout = sizeframe/2 + 1;
+	out = fftw_malloc(sizeof(fftw_complex)*sizeout);
+	p = fftw_plan_dft_r2c_1d( sizeframe , x , out , FFTW_ESTIMATE );
 
+	DSP=calloc(sizeout,sizeof(double));
+	
+	fftw_execute(p);	
+	
+	for(i=0;i<sizeout;i++) DSP[i] = ( out[i][0]*out[i][0] + out[i][1]*out[i][1] );
+	
+	fftw_free(out);
+	fftw_destroy_plan(p);
+	
+	return DSP;
+}
+int frameprocessing( chord * tabchord , frame x , int sizeframe , double samplerate, int kmin, int k0 , int k1){
+	frame X;
+	frame N;
+	frame Z;
+	double SNR;
+	int b;
+	int nmax = floor(log(6000/50)/log(4/3))+1;
+	
+	X = short_time_DSP( x , sizeframe );
+	if(!X ){
+		printf("frameprocessing() X NULL\n");
+		return 0;
+	}
+	N = calloc(sizeframe, sizeof(double));
+	SNR = SNR_calc( X , N , sizeframe);
+	Z  = noisesup( X , k0 , k1 , sizeframe , (double)2/3 , N );
+	free(X); // une fois que le rapport signal sur bruit (SNR) st calculé on a plus besoin de N et X
+	free(N);
+	b=boucle(tabchord,Z,sizeframe,SNR,nmax,kmin,thresv0,thresvi,k0,k1);
+		
+		
+	
+	
+double max_valueandposition_frame(frame X , int sizeframe , int * kmax){
+	int i;
+	double M=-1;
+	if( !X ){
+		printf(" frame X est NULL\n");
+		return 0;
+	}
+	for(i=0;i<sizeframe;i++){
+		if(X[i] > M){
+			if(!kmax)*kmax=i;
+			M=X[i];
+		}
+	}
+	return M;
+}
+
+frame arraymultiplication( frame X, frame Y, int sizeframe){
+	int i;
+	frame Z=calloc(sizeframe,sizeof(double));
+	if(!X || !Y || !Z){
+		puts("problème arraymultiplication");
+		return NULL;
+	}
+	for(i=0;i<sizeframe;i++){
+		Z[i] = X[i]*Y[i];
+	}
+	return Z;
+}
 
 
