@@ -13,7 +13,7 @@
 #define OFFSETMIDI 21
 #define RATIOLISSAGE 1
 #define RATIOBANDE 0.666666667
-
+#define BNMAX 17 // = floor(log(6000/50)/log(4/3))+1
 
 
 double * creertab( int n) {
@@ -144,13 +144,16 @@ double SNR_calc( frame X , frame N , int sizeframe, int k0, int k1 ){
 		N+=Npow[i];
 		}
 	
-	if(N)SNR = x/N;
+	if(N){
+		SNR = x/N;
+		return SNR;
+	}
 	else return 0;
-	return SNR;
+	
 }
 
-
-int F0fromL(double* L, int taille){			//Testée et approuvée
+/*
+int F0fromL(double* L, int taille){ // remplacée par max_valueandposition_frame()
 	int i;
 	double M=-1;
 	int fM;
@@ -166,7 +169,7 @@ int F0fromL(double* L, int taille){			//Testée et approuvée
 	}
 	return(fM);
 }
-
+*/
 
 double mean(double* T,double m0,double m2){   //Calcul la moyenne entre m0 et m2 //Testée et Approuvée
 	double S = 0;
@@ -201,11 +204,11 @@ void zeros( int l ,frame t){						//Testée et approuvée
 }
 
 
-void functionBW (double * b,double kmin, int sizeframe, double kb, double* M0, double* M2){   //Testée et approuvée
+void functionBW (double * b , double kmin , int sizeframe , double kb , double * M0 , double * M2){   //Testée et approuvée
 	int i;
 	double kb1=round(kb);
 	double m1,b1,a1,b2,a2;
-	double ratio=RATIOBANDE;
+	double ratio = RATIOBANDE;
 	zeros(sizeframe,b);
 	if (kb1*ratio > kmin) {
 		*M0 = kb1;
@@ -248,25 +251,38 @@ void functionBW (double * b,double kmin, int sizeframe, double kb, double* M0, d
 }
 
 
-double ** MatrixBW(int nmax , int sizeframe , int k0 , double kmin){
+double ** MatrixBW(int sizeframe , int k0 , double kmin , double * B_m0_m2){
 	double ** BankB;
 	int i;
 	int kb = k0;
 	double * M0 = calloc(1,sizeof(double));
 	double * M2 = calloc(1,sizeof(double));
-	BankBW = calloc(nmax+1,sizeof(double *)); // nmax+1 car on stocke la largeur de chaque bande sur le dernière colonne, en supposant bien sur que nmax sera toujours inférieur à sizeframe ( ce qui est trés probable )
-	BankBW[0] = calloc(nmax*sizeframe,sizeof(double)); // allocation contigue
-	for(i=0;i < nmax;i++){ // on fait l'allocation et le calcul des passe-bandes triangulaires en même temps
+	BankBW = calloc(BNMAX,sizeof(double *));
+	BankBW[0] = calloc(BNMAX*sizeframe,sizeof(double)); // allocation contigue
+	if(!BankBW || ! BankBW[0] ){
+		puts("BankBW NULL");
+		return NULL;
+	}
+	if(!B_m0,m2){
+		puts("B_m0_m2 NULL");
+		return NULL;
+	}
+	for(i=0;i < BNMAX;i++){ // on fait l'allocation et le calcul des passe-bandes triangulaires en même temps
 		if(i>0){
 			BankBW[i] = BankBW[i-1 + sizeframe ]
 			kb=kb*4./3.
 			functionBW(BankBW[i] , kmin , sizeframe , kb , M0 , M2);
+			B_m0_m2[2*i] = *M0;
+			B_m0_m2[2*i+1] = *M2;
 		}
 		else{
 			kb=kb*4./3.
 			functionBW(BankBW[i] , kmin , sizeframe , kb , M0 , M2);
+			B_m0_m2[0] = *M0;
+			B_m0_m2[1] = *M2;
 		}
 	}
+	
 	return BankBW;
 }
 
@@ -317,7 +333,7 @@ double* Z_smoothing(double* z, int taille,int N,double ratio,int k){		//  NON Te
 				if(zb[j]<m){
 					min = zb[j];
 				}
-                		zsmoothed[j]=min; 	  // a revoir , valable pour les moyennes hautes fréquences , à ajuster pour les petites
+                		zsmoothed[j]=min;// a revoir, valable pour les moyennes et hautes fréquences , à ajuster pour les petites
 			}
 		}
 		i=i+k;
@@ -380,15 +396,106 @@ frame short_time_DSP( frame x , int sizeframe){ // il est possible d'optimiser l
 	return DSP;
 }
 
+void lbvector(frame zb , int sizeframe , int KB , int kb , int U0 , double * Lb){
+	int n0 = U0;
+	int n1 = KB;
+	int n;
+	int k0;
+	int k1;
+	int lb = kb + KB -1;
+	int J;
+	double C;
+	int m;
+	int m0;
+	int m1;
+	double delta;
+	int i;
+	double Ln;
+	int h;
+	if(!Lb){
+		puts("Lb NULL");
+		return EXIT_FAILURE;
+	}
+	
+	zeros(sizeframe,Lb);
+	for(n=n0;n<n1;n++){
+		m0 = (floor(kb/n)+1)*n -kb;
+		delta = (double)lb/n;
+		delta *= delta;
+		delta = lb*(sqrt(1+0.01*(delta-1))-1)
+		m1 = m0 + round(delta);
+		if(m1>m0+n-1){
+			m0=0;
+			m1=n-1;
+		}
+		for(m=m0;m<m1;m++){
+			J = floor((Kb-m-1)/n)+1
+			C = 0.75/J + 0.25;
+			Ln=0;
+			for(i=0; i < J && kb+m+n*i < sizeframe){
+				Ln=Ln+c*zb[kb+m+n*i];
+				i++;
+			}
+			if(Lb[n] < Ln) Lb(n) = Ln;
+		}
+	}
+	h=1;
+	k0 = floor((kb+KB)/(h+1));
+	if(k0<kb) k0=kb;
+	k1 = kb + KB -1;
+	while(k0<=k1){
+		for(i=k0;i<=k1;i++){
+			n=round(i/h);
+			if(k<sizeframe){
+				if(Lb[n] < zb[i]) Lb[n] = zb[i];
+			}
+		}
+		h++;
+		k0 = floor((kb+KB)*h/(h+1))+1
+		if(k0<kb) k0 = kb;
+		k1=floor((kb-1)*h/(h-1))
+		if(k1>kb+KB) k1 = kb + KB;
+		
+	}
+}
 
-int frameprocessing( chord * tabchord , frame x , int sizeframe , double samplerate, int kmin, int k0 , int k1){
+
+void Lvector( frame Z , int sizeframe , int kmin , frame L , double ** MatrixB , double * b_m0_m2){
+	int m0;
+	int m2;
+	int i,j;
+	int KB;
+	frame zb = calloc(sizeframe,sizeof(double));
+	frame lb = calloc(sizeframe,sizeof(double));
+	zeros(sizeframe,L);
+	if( !L || !MatrixB || !b_m0_m2){
+		puts("prob lvector()");
+		return EXIT_FAILURE;
+	}
+	for(i=0 ; i<BNMAX ; i++){
+		arraymultiplication( Z , MatrixB[i] , sizeframe , zb);
+		m0 = floor(b_m0_m2[2*i]);
+		m2 = floor(b_m0_m2[2*i+1]);
+		KB = m2 - m0 + 1;
+		lbvector( zb ,  sizeframe , KB , m0 , U0 ,  Lb);
+		for(j=0;j<sizeframe;j++)L[j]=L[j] + Lb[j];
+	}
+}
+	
+
+
+int boucle(chord * tabchord , frame Z , int sizeframe , double SNR , int kmin , double thresv0 , double thresvi , int k0 , int k1, double ** MatrixB , double * b_m0_m2){
+	int nbiteration=0;
+	
+	
+	
+
+int frameprocessing( chord * tabchord , frame x , int sizeframe , double samplerate, int kmin, int k0 , int k1 , double ** MatrixB, double * b_m0_m2 ){
 	frame X;
 	frame N;
 	frame Z;
 	double SNR;
 	int b=0;
-	int nmax = floor(log(6000/50)/log(4/3))+1;
-	
 	X = short_time_DSP( x , sizeframe );
 	if(!X ){
 		printf("frameprocessing() X NULL\n");
@@ -397,11 +504,13 @@ int frameprocessing( chord * tabchord , frame x , int sizeframe , double sampler
 	N = calloc(sizeframe, sizeof(double));
 	SNR = SNR_calc( X , N , sizeframe);
 	Z  = noisesup( X , k0 , k1 , sizeframe , (double)2./3. , N );
-	free(X); // une fois que le rapport signal sur bruit (SNR) st calculé on a plus besoin de N et X
+
+	free(X); // une fois que le rapport signal sur bruit (SNR) est calculé, N et X sont inutiles
 	free(N);
-	b=boucle(tabchord,Z,sizeframe,SNR,nmax,kmin,thresv0,thresvi,k0,k1);
-	if(b==0) return 0;
-	else return 1;
+
+	b=boucle(tabchord,Z,sizeframe,SNR,kmin,thresv0,thresvi,k0,k1,MatrixB,b_m0,m2);
+	if(b==0) return 0; // 0 si rien n'a été modifié dans tabchord
+	else return 1; // 1 si on a au moins une note, en sachant que b représente le nombre de notes détectées
 }
 	
 	
@@ -414,25 +523,23 @@ double max_valueandposition_frame(frame X , int sizeframe , int * kmax){
 	}
 	for(i=0;i<sizeframe;i++){
 		if(X[i] > M){
-			if(!kmax)*kmax=i;
-			M=X[i];
+			if(!kmax) *kmax = i;
+			M = X[i];
 		}
 	}
 	return M;
 }
 
 
-frame arraymultiplication( frame X, frame Y, int sizeframe){
+void arraymultiplication( frame X, frame Y, int sizeframe , frame zb){
 	int i;
-	frame Z=calloc(sizeframe,sizeof(double));
-	if(!X || !Y || !Z){
+	if(!X || !Y || !zb){
 		puts("problème arraymultiplication");
 		return NULL;
 	}
 	for(i=0;i<sizeframe;i++){
-		Z[i] = X[i]*Y[i];
+		zb[i] = X[i]*Y[i];
 	}
-	return Z;
 }
 
 
