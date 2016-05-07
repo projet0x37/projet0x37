@@ -14,7 +14,7 @@
 #define RATIOLISSAGE 1
 #define RATIOBANDE 0.666666667
 #define BNMAX 17 // = floor(log(6000/50)/log(4/3))+1
-
+#define DELTAMIN 0.00001
 
 double * creertab( int n) {
 	double * tab;
@@ -125,11 +125,10 @@ int processing_init( double Lmax , double SNR , double threshold ){
 }
 
 
-int iteration_checking( double Lmaxi , double SNR , double threshold ){
-	double vi=0;
-	vi=1.8*log(Lmaxi)-log(SNR);
-	if (vi>threshold) return 1;
-	if (vi<=threshold) return 0;
+int iteration_checking( double Lmaxi , double SNR , double threshold ,double * vi){
+	*vi=1.8*log(Lmaxi)-log(SNR);
+	if (*vi>threshold) return 1;
+	if (*vi<=threshold) return 0;
 	return -1;
 }
 
@@ -272,14 +271,15 @@ double ** MatrixBW(int sizeframe , int k0 , double kmin , double * B_m0_m2){
 			BankBW[i] = BankBW[i-1 + sizeframe ]
 			kb=kb*4./3.
 			functionBW(BankBW[i] , kmin , sizeframe , kb , M0 , M2);
-			B_m0_m2[2*i] = *M0;
-			B_m0_m2[2*i+1] = *M2;
+			B_m0_m2[2*i] = floor(*M0);
+			B_m0_m2[2*i+1] = floor(*M2);
+		}
 		}
 		else{
 			kb=kb*4./3.
 			functionBW(BankBW[i] , kmin , sizeframe , kb , M0 , M2);
-			B_m0_m2[0] = *M0;
-			B_m0_m2[1] = *M2;
+			B_m0_m2[0] = floor(*M0);
+			B_m0_m2[1] = floor(*M2);
 		}
 	}
 	
@@ -287,7 +287,7 @@ double ** MatrixBW(int sizeframe , int k0 , double kmin , double * B_m0_m2){
 }
 
 
-double* Z_smoothing(double* z, int taille,int N,double ratio,int k){		//  NON Testée
+void Z_smoothing(double* z, int taille , int k){		//  NON Testée
 	double * zsmoothed = calloc(taille,sizeof(*zsmoothed));
 	int i = k;
 	double nfactor;		//facteur permettant de réhausser la moyenne pondérée (on suppose que les fondamentales sont détectées de manière croissante : il 						n'y à alors pas d'inconvénient à supprimer celle détectée).
@@ -307,8 +307,8 @@ double* Z_smoothing(double* z, int taille,int N,double ratio,int k){		//  NON Te
 
 	while(i+k < taille){
 
-		kb = i-i*ratio/2;
-		rb = 2*ratio/(2-ratio); // la fonction crée une porte triangulaire à partir de kb, ici on veut qu'elle soit centrée sur i, c'est pourquoi on fait intervenir un ratio "rb" différent de "ratio"
+		kb = i-i*RATIOLISSAGE/2;
+		rb = 2*RATIOLISSAGE/(2-RATIOLISSAGE); // la fonction crée une porte triangulaire à partir de kb, ici on veut qu'elle soit centrée sur i, c'est pourquoi on fait intervenir un ratio "rb" différent de "ratio"
 		b = functionBW(100,N,taille,kb,rb,M0,M2); // largeur minimale de 100hz ( à voir ) , fixé par kb*ratio sinon.
 
 		for(i=0;i<taille;i++){
@@ -340,9 +340,8 @@ double* Z_smoothing(double* z, int taille,int N,double ratio,int k){		//  NON Te
 		
 	}
 	for(i=0;i<taille;i++){
-		zsmoothed[i] = z[i]-zsmoothed[i];
+		z[i] = z[i]-zsmoothed[i];
 	}
-	return(zsmoothed);
 }
 
 
@@ -460,11 +459,12 @@ void lbvector(frame zb , int sizeframe , int KB , int kb , int U0 , double * Lb)
 }
 
 
-void Lvector( frame Z , int sizeframe , int kmin , frame L , double ** MatrixB , double * b_m0_m2){
+void Lvector( frame Z , int sizeframe , int kmin , frame L ,double ** MatrixB , double * b_m0_m2){
 	int m0;
 	int m2;
 	int i,j;
 	int KB;
+	int k0 = b_m0_m2[0];
 	frame zb = calloc(sizeframe,sizeof(double));
 	frame lb = calloc(sizeframe,sizeof(double));
 	zeros(sizeframe,L);
@@ -474,10 +474,10 @@ void Lvector( frame Z , int sizeframe , int kmin , frame L , double ** MatrixB ,
 	}
 	for(i=0 ; i<BNMAX ; i++){
 		arraymultiplication( Z , MatrixB[i] , sizeframe , zb);
-		m0 = floor(b_m0_m2[2*i]);
-		m2 = floor(b_m0_m2[2*i+1]);
+		m0 = b_m0_m2[2*i];
+		m2 = b_m0_m2[2*i+1];
 		KB = m2 - m0 + 1;
-		lbvector( zb ,  sizeframe , KB , m0 , U0 ,  Lb);
+		lbvector( zb ,  sizeframe , KB , m0 , k0 ,  Lb);
 		for(j=0;j<sizeframe;j++)L[j]=L[j] + Lb[j];
 	}
 }
@@ -485,9 +485,54 @@ void Lvector( frame Z , int sizeframe , int kmin , frame L , double ** MatrixB ,
 
 
 int boucle(chord * tabchord , frame Z , int sizeframe , double SNR , int kmin , double thresv0 , double thresvi , int k0 , int k1, double ** MatrixB , double * b_m0_m2){
-	int nbiteration=0;
-	
-	
+	int b=1;
+	frame L;
+	int i=0;
+	int j;
+	double Lmax;
+	int ksup;
+	int ks;
+	int  kmax;
+	double Lmax;
+	double v;
+	double deltavi;
+	double vi;
+	int itcheck;
+	L=calloc(sizeframe,sizeof(double));
+	while(b>0){
+		Lvector(Z,sizeframe,kmin,L,MatrixB,b_m0_m2);
+		if(i!=0){
+			for(j=0;j<i;j++){
+				ksup = tabchord[j].note;
+				ksup0 = ceil(ksup-pow(ksup,(double)1/12)/2);
+				ksup1 = floor(ksup + pow(ksup,(double)1/12)/2);
+				for(ks=ksup0;ks<=ksup1;ks++)L(ks)=0;
+			}
+		}
+		Lmax=max_valueandposition_frame(L,sizeframe, &kmax);
+		
+		if(i==1){
+			if(processing_init( Lmax , SNR , thresv0) == 1){
+				tabchord[i] = kmax;
+				Z_smoothing( Z, sizeframe , kmax);
+				i++;
+			}
+			else b=0;
+		}
+		else{
+			deltavi = vi;
+			itcheck = iteration_checking( Lmax , SNR ,  thresvi , &vi)
+			deltavi = abs( deltavi - vi );
+			if( itcheck == 1 && i < 10 && deltavi > DELTAMIN ){
+				tabchord[i] = kmax;
+				Z_smoothing( Z, sizeframe , kmax);
+				i++;
+			}
+			else b = 0;
+		}
+	}
+	return i-1;
+}		
 	
 
 int frameprocessing( chord * tabchord , frame x , int sizeframe , double samplerate, int kmin, int k0 , int k1 , double ** MatrixB, double * b_m0_m2 ){
