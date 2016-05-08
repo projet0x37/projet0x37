@@ -34,12 +34,11 @@ double incertitude ( int n ) {
 	return i ;
 }   
 
-char correspondancenote( float fech , int n ){
+char correspondancenote( float fech , int n , double * notesBank){
 	int j=0;
 	char note = -1;// valeur par défaut, si elle vaut -1 la correspondance note> fréquence n'a pas été concluante
-	double * tab = creertab(128) ;
 	for(j=0;j<128;j++) {
-		if ( abs(tab[j]-fech) < incertitude(j) ){
+		if ( abs(notesBank[j]-fech) < incertitude(j) ){
 			note = j;
 		}
 	}
@@ -370,7 +369,7 @@ void initTnote( Tnote T , int sizeTmax){
 }
 
 
-frame short_time_DSP( frame x , int sizeframe){ // il est possible d'optimiser l'utilisation des plans p
+frame short_time_DSP( frame x , int sizeframe){ // il est possible d'optimiser l'utilisation des plans p, x doit étre alloué par fftw_malloc() de la librairie fftw
 	fftw_complex * out;
 	fftw_plan p;
 	frame DSP;
