@@ -30,7 +30,7 @@ void initTnote( Tnote T , int sizeTmax );
 frame short_time_DSP( frame x , int sizeframe );
 int boucle(chord * tabchord , frame Z , int sizeframe , double SNR , int nmax , int kmin , double thresv0 , double thresvi , int k0 , int k1)
 int frameprocessing( chord * tabchord , frame x , int sizeframe , double samplerate, int kmin , int k1 , int k0);
-void mainprocessing( Tnote  T , double * datain , int sizeTmax , double samplerate);
+void mainprocessing( Tnote  T , double * datain , int sizeTmax , double samplerate , int sizeframe);
 Tnote  resizeTnote( Tnote  T , int sizeTmax , double timeresolution );
 double max_valueandposition_frame(frame X , int sizeframe , int * k);
 frame arraymultiplication( frame X, frame Y, int sizeframe);

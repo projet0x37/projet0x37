@@ -15,31 +15,32 @@
 #define RATIOBANDE 0.666666667
 #define BNMAX 17 // = floor(log(6000/50)/log(4/3))+1
 #define DELTAMIN 0.00001
+#define NBNOTES 128
 
-double * creertab( int n) {
+double * creertab( double samplerate , int sizeframe) { // les valeurs stockées sont des fréquences adaptées  à la transformée de fourrier rapide fftw
 	double * tab;
 	double fo = F0;
+	double k0 = (double)fo*sizeframe/samplerate
 	int i;
-	tab=calloc(n,sizeof(*tab));
-	for (i=0;i<n;i++){
-		tab[i]=fo*pow(2,(double)i/12);}
+	tab=calloc(NBNOTES,sizeof(*tab));
+	for (i=0;i<NBNOTES;i++){
+		tab[i]=k0*pow(2,(double)i/12);}
 	return tab;
 }
 
 
-double incertitude ( int n ) {
-	double fo= F0;
-	double i ;
-	i= (fo*pow(2,(float)n/12)*(pow(2,(float)1/12)-1))/2 ;
+double incertitude ( double knotes ) {
+	i = knotes*(pow(2,(float)1/12)-1))/2 ; // incertitude d'un quart de ton
 	return i ;
 }   
 
-char correspondancenote( float fech , int n , double * notesBank){
-	int j=0;
+char correspondancenote( double kech , double * notesBank){
+	int j;
 	char note = -1;// valeur par défaut, si elle vaut -1 la correspondance note> fréquence n'a pas été concluante
-	for(j=0;j<128;j++) {
-		if ( abs(notesBank[j]-fech) < incertitude(j) ){
-			note = j;
+	int n = NBNOTES;
+	for(j=0;j<NBNOTES;j++) {
+		if ( abs(notesBank[j]-kech) < incertitude(notesBank[j]) ){
+			note = j + OFFSETMIDI; // + OFFSETMIDI pour s'adapter à la numérotation midi des notes
 		}
 	}
 	return note;
@@ -483,7 +484,7 @@ void Lvector( frame Z , int sizeframe , int kmin , frame L ,double ** MatrixB , 
 	
 
 
-int boucle(chord * tabchord , frame Z , int sizeframe , double SNR , int kmin , double thresv0 , double thresvi , int k0 , int k1, double ** MatrixB , double * b_m0_m2){
+int boucle(chord * tabchord , frame Z , int sizeframe , double SNR , int kmin , double thresv0 , double thresvi , int k0 , int k1, double ** MatrixB , double * b_m0_m2 , double * NotesBank){
 	int b=1;
 	frame L;
 	int i=0;
@@ -508,11 +509,11 @@ int boucle(chord * tabchord , frame Z , int sizeframe , double SNR , int kmin , 
 				for(ks=ksup0;ks<=ksup1;ks++)L(ks)=0;
 			}
 		}
-		Lmax=max_valueandposition_frame(L,sizeframe, &kmax);
+		Lmax = max_valueandposition_frame(L,sizeframe, &kmax);
 		
 		if(i==1){
 			if(processing_init( Lmax , SNR , thresv0) == 1){
-				tabchord[i] = kmax;
+				tabchord[i].note = correspondancenote( kmax , notesBank )
 				Z_smoothing( Z, sizeframe , kmax);
 				i++;
 			}
@@ -523,7 +524,7 @@ int boucle(chord * tabchord , frame Z , int sizeframe , double SNR , int kmin , 
 			itcheck = iteration_checking( Lmax , SNR ,  thresvi , &vi)
 			deltavi = abs( deltavi - vi );
 			if( itcheck == 1 && i < 10 && deltavi > DELTAMIN ){
-				tabchord[i] = kmax;
+				tabchord[i].note = correspondancenote( kmax , notesBank )
 				Z_smoothing( Z, sizeframe , kmax);
 				i++;
 			}
@@ -534,7 +535,7 @@ int boucle(chord * tabchord , frame Z , int sizeframe , double SNR , int kmin , 
 }		
 	
 
-int frameprocessing( chord * tabchord , frame x , int sizeframe , double samplerate, int kmin, int k0 , int k1 , double ** MatrixB, double * b_m0_m2 ){
+int frameprocessing( chord * tabchord , frame x , int sizeframe , double samplerate, int kmin, int k0 , int k1 , double ** MatrixB, double * b_m0_m2 , double * NoteBank){
 	frame X;
 	frame N;
 	frame Z;
