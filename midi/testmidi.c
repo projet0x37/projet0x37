@@ -2,8 +2,6 @@
 #include <stdlib.h>
 #include "midi.h"
 
-//int tailleTnote(Tnote tab){
-
 int main(int argc, char** args){
 	int t;
 	int i;
