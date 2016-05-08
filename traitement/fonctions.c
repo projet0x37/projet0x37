@@ -11,16 +11,32 @@
 
 #define F0 27.5000
 #define OFFSETMIDI 21
-#define RATIOLISSAGE 1
-#define RATIOBANDE 0.666666667
-#define BNMAX 17 // = floor(log(6000/50)/log(4/3))+1
+#define RATIOLISSAGE (double)1
+#define RATIOBANDE (double)2/3
 #define DELTAMIN 0.00001
 #define NBNOTES 128
+#define FMIN 50
+#define FMAX 6000
+#define BNMAX 17 // = floor(log(FMAX/FMIN)/log(4/3))+1
 
-double * creertab( double samplerate , int sizeframe) { // les valeurs stockées sont des fréquences adaptées  à la transformée de fourrier rapide fftw
+
+int round(double value) { // OK
+     return floor(value + 0.5);
+}
+
+
+void zeros( int l ,frame t){ // OK
+	int i;	
+	for(i=0;i<l;i++){
+		t[i]=0;
+	}
+	return(t);
+}
+
+
+double * creer_notesBank( double samplerate , int sizeframe) { // les valeurs stockées sont des fréquences adaptées  à la transformée de fourrier rapide fftw
 	double * tab;
-	double fo = F0;
-	double k0 = (double)fo*sizeframe/samplerate
+	double k0 = (double)F0*sizeframe/samplerate
 	int i;
 	tab=calloc(NBNOTES,sizeof(*tab));
 	for (i=0;i<NBNOTES;i++){
@@ -30,7 +46,7 @@ double * creertab( double samplerate , int sizeframe) { // les valeurs stockées
 
 
 double incertitude ( double knotes ) {
-	i = knotes*(pow(2,(float)1/12)-1))/2 ; // incertitude d'un quart de ton
+	i = knotes*(pow(2,(float)1/12)-1))/2 ; // incertitude d'un quart de ton , peut être un peu large , cela autorise une imprécision de 6 %
 	return i ;
 }   
 
@@ -133,6 +149,39 @@ int iteration_checking( double Lmaxi , double SNR , double threshold ,double * v
 }
 
 
+double mean(double* T,double m0,double m2){   //Calcul la moyenne entre m0 et m2 //Testée et Approuvée
+	double S = 0;
+	int i;
+	if(!T){
+		puts("Erreur");
+		return(0);
+	}
+	if(m0<0){
+		puts("Erreur");
+		return(0);
+	}
+	for(i=(int)m0;i<(int)m2+1;i++){
+		S=S+T[i];
+	}
+	return(S/(m2-m0+1));
+}
+
+
+double * npow( double* meanx, int k1,int k0,int taille){
+	int i;
+	double g=0;
+	double* Npow=zeros(taille);
+	for (i=k0;i<k1;i++){
+		g+=pow(meanx[i],(double)1/3);
+	}
+	g=g/(k1-k0+1);
+	g=pow(g,3);
+	for(i=k0;i<k1;i++){
+		Npow[i]=exp(meanx[i]-1)*g;
+	}
+	return Npow;
+}
+
 double SNR_calc( frame X , frame N , int sizeframe, int k0, int k1 ){
 	frame Npow=npow(N,k1,k0,sizeframe);
 	double x=0;
@@ -170,37 +219,10 @@ int F0fromL(double* L, int taille){ // remplacée par max_valueandposition_frame
 }
 */
 
-double mean(double* T,double m0,double m2){   //Calcul la moyenne entre m0 et m2 //Testée et Approuvée
-	double S = 0;
-	int i;
-	if(!T){
-		puts("Erreur");
-		return(0);
-	}
-	if(m0<0){
-		puts("Erreur");
-		return(0);
-	}
-	for(i=(int)m0;i<(int)m2+1;i++){
-		S=S+T[i];
-	}
-	return(S/(m2-m0+1));
-}
+
 
 
  
-int round(double value) {					//Testée et approuvée
-     return floor(value + 0.5);
-}
-
-
-void zeros( int l ,frame t){						//Testée et approuvée
-	int i;	
-	for(i=0;i<l;i++){
-		t[i]=0;
-	}
-	return(t);
-}
 
 
 void functionBW (double * b , double kmin , int sizeframe , double kb , double * M0 , double * M2){   //Testée et approuvée
@@ -256,8 +278,10 @@ double ** MatrixBW(int sizeframe , int k0 , double kmin , double * B_m0_m2){
 	int kb = k0;
 	double * M0 = calloc(1,sizeof(double));
 	double * M2 = calloc(1,sizeof(double));
+
 	BankBW = calloc(BNMAX,sizeof(double *));
 	BankBW[0] = calloc(BNMAX*sizeframe,sizeof(double)); // allocation contigue
+
 	if(!BankBW || ! BankBW[0] ){
 		puts("BankBW NULL");
 		return NULL;
@@ -271,15 +295,15 @@ double ** MatrixBW(int sizeframe , int k0 , double kmin , double * B_m0_m2){
 			BankBW[i] = BankBW[i-1 + sizeframe ]
 			kb=kb*4./3.
 			functionBW(BankBW[i] , kmin , sizeframe , kb , M0 , M2);
-			B_m0_m2[2*i] = floor(*M0);
-			B_m0_m2[2*i+1] = floor(*M2);
+			B_m0_m2[2*i] = round(*M0);
+			B_m0_m2[2*i+1] = floor(*M2)+1;
 		}
 		}
 		else{
 			kb=kb*4./3.
 			functionBW(BankBW[i] , kmin , sizeframe , kb , M0 , M2);
-			B_m0_m2[0] = floor(*M0);
-			B_m0_m2[1] = floor(*M2);
+			B_m0_m2[0] = round(*M0);
+			B_m0_m2[1] = floor(*M2)+1;
 		}
 	}
 	
@@ -291,8 +315,8 @@ void Z_smoothing(double* z, int taille , int k){		//  NON Testée
 	double * zsmoothed = calloc(taille,sizeof(*zsmoothed));
 	int i = k;
 	double nfactor;		//facteur permettant de réhausser la moyenne pondérée (on suppose que les fondamentales sont détectées de manière croissante : il 						n'y à alors pas d'inconvénient à supprimer celle détectée).
-	double* M0 = calloc(1,sizeof(*M0));
-	double* M2 = calloc(1,sizeof(*M2));
+	double* M0 = calloc(1,sizeof(double));
+	double* M2 = calloc(1,sizeof(double));
 	double mz;
 	double mb;
 	double m;
@@ -300,10 +324,10 @@ void Z_smoothing(double* z, int taille , int k){		//  NON Testée
 	int j;
 	int j0;
        	int j1;
-	double* zb = calloc(taille,sizeof(*zb));
+	double* zb = calloc(taille,sizeof(double));
 	double kb;
 	double rb;
-	double* b = calloc(taille,sizeof(*b));
+	double* b = calloc(taille,sizeof(double));
 
 	while(i+k < taille){
 
@@ -345,27 +369,15 @@ void Z_smoothing(double* z, int taille , int k){		//  NON Testée
 }
 
 
-double * npow( double* meanx, int k1,int k0,int taille){
-	int i;
-	double g=0;
-	double* Npow=zeros(taille);
-	for (i=k0;i<k1;i++){
-		g+=pow(meanx[i],(double)1/3);
-	}
-	g=g/(k1-k0+1);
-	g=pow(g,3);
-	for(i=k0;i<k1;i++){
-		Npow[i]=exp(meanx[i]-1)*g;
-	}
-	return Npow;
-}
 
 
 void initTnote( Tnote T , int sizeTmax){
 	int i;
+	int j;
 	if(!T) return EXIT_FAILURE;
 	for(i=0;i<sizeTmax;i++){
-		Tnote[i].temps=-1.0
+		Tnote[i].temps=-1.0 ;
+		for(j=0;j<SIZE_TABCHORD;j++) Tnote[i].tabchord[j].note = -1 ;
 	}
 }
 
@@ -498,7 +510,9 @@ int boucle(chord * tabchord , frame Z , int sizeframe , double SNR , int kmin , 
 	double deltavi;
 	double vi;
 	int itcheck;
+
 	L=calloc(sizeframe,sizeof(double));
+
 	while(b>0){
 		Lvector(Z,sizeframe,kmin,L,MatrixB,b_m0_m2);
 		if(i!=0){
@@ -523,7 +537,7 @@ int boucle(chord * tabchord , frame Z , int sizeframe , double SNR , int kmin , 
 			deltavi = vi;
 			itcheck = iteration_checking( Lmax , SNR ,  thresvi , &vi)
 			deltavi = abs( deltavi - vi );
-			if( itcheck == 1 && i < 10 && deltavi > DELTAMIN ){
+			if( itcheck == 1 && i < 11 && deltavi > DELTAMIN ){ // on suppose qu'il est impossible de détecter plus de 10 notes , cela permet de limiter la boucle quoi qu'il arrive
 				tabchord[i].note = correspondancenote( kmax , notesBank )
 				Z_smoothing( Z, sizeframe , kmax);
 				i++;
@@ -586,5 +600,67 @@ void arraymultiplication( frame X, frame Y, int sizeframe , frame zb){
 		zb[i] = X[i]*Y[i];
 	}
 }
+
+void mainprocessing( Tnote  T , double * datain , int sizeTmax , double samplerate , int sizeframe){
+	int j = 0;
+	int k = 0;
+	int i;
+	int b;
+	int k0 = (int)FMIN*sizeframe/samplerate;
+	int k1 = (int)FMAX*sizeframe/samplerate;
+	int kmin = (int)round((double)BMIN*sizeframe/samplerate);
+
+	double * NotesBank=creer_notesBank( samplerate , sizeframe );
+	double * B_m0_m2 = calloc(BNMAX*2,sizeof(double))
+	double ** MatrixB = MatrixBW( sizeframe , k0 ,  kmin , B_m0_m2);
+	double time; // en secondes
+
+	frame x = calloc(sizeframe,sizeof(double));
+
+	if(!x || !datain ){
+		puts(" x ou datain NULL");
+		return EXIT_FAILURE;
+	}
+
+	if( !NotesBank || ! B_m0_m2 || !MatrixB){
+		puts("problème allocation NotesBank,B_m0_m2,MatrixB");
+		return EXIT_FAILURE;
+	}
+	
+	initTnote(T);
+	while(j<sizeTmax){
+		for( i=0 ; i < sizeframe ; i++ ) x[i] = datain[i+j];
+		b = frameprocessing(Tnote[k].tabchord ,  x , sizeframe ,  samplerate,  kmin,  k0 ,  k1 ,   MatrixB,   b_m0_m2 ,  NoteBank );
+		if( b == 1 ){ // au moins une note a été détectée donc on stocke le temps de détection et on incrémente k
+			time = (j+sizeframe/2)*samplerate/sizeframe; // le temps de détection correspond au centre de la porte
+			Tnote[k].time = time;
+			k++;
+		}
+		j += sizeframe/2 // on avance d'une demie porte
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
