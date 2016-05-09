@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include "midi.h"
 
-
 typedef struct{
 	char note;
 	double duree;

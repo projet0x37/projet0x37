@@ -128,19 +128,22 @@ liste creationLi(liste l){
 }
 
 
-liste tabtoliste(chord tab[]){			//OK
+liste tabtoliste(chord tab[]){ //OK
 	liste l=NULL;
 	liste p=NULL;
 	int i=1;
 	l=calloc(1,sizeof(*p));
 	p=l;
-	for(i=0; i<31 && tab[i].note > -1 ; i++){
-		l->note=tab[i].note;
-		l->duree=tab[i].duree;
-		if(tab[i+1].note < 0) l->suiv=NULL;
-		else{
+	for(i=0; i<SIZE_TABCHORD ; i++){
+		if(tab[i].note > 0){
+			l->note=tab[i].note;
+			l->duree=tab[i].duree;}
+		if(tab[i+1].note > 0 && i+1 <SIZE_TABCHORD){
 			l->suiv=calloc(1,sizeof(*l));
 			l=l->suiv;
+		}
+		else{
+			if(i+1==SIZE_TABCHORD) l->suiv=NULL;
 		}
 	}
 	return(p);
