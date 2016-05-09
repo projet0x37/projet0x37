@@ -14,7 +14,25 @@ void textexport(char * textname,double * data,int taille, int taille_utilisateur
 	}
 	fclose(f1);
 }
-	
+
+
+void textexport_Mat(char * textname , double ** data , int colonne, int ligne){
+	FILE * f1;
+	int i,j;
+	f1=fopen(textname,"w");
+	if(data){
+		for(j=0;j<ligne;j++){
+			printf("%d\n",j);
+			for(i=0;i<colonne;i++){
+				if(i==colonne-1)fprintf(f1,"%lf\n",data[j][i]);
+				else fprintf(f1,"%lf ",data[j][i]);
+			}
+		}
+	}
+	fclose(f1);
+}
+
+
 double* tabexportfromtext(char * textname,int nb){
 	double * t = calloc(nb,sizeof(*t));	
 	int i=0;
