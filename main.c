@@ -9,72 +9,77 @@
 
 int main(int argc, char** args){
 	double * datain;
-	Tnote T;
 	int  size;
 	double duration;
 	double samplerate;
-	int frames = 8192 ;
-	double minframeduration;
+	int sizeframe = 8192 ;
 	int sizeTmax;
-	double timeresolutionsms;
-	fftw_complex * out;
-	fftw_plan p;
-	double * DSP;
 	int i;
+	int k0,k1;
 	double * in;
 	int sizeout;
 	int position;
 	double t0;
 	double tf;
-
+	int b;
+	frame DSP;
+	Tnote T;
+	frame Z;
+	frame N;
+	double * B_m0_m2 = calloc(BNMAX*2,sizeof(double));
+	double ** Mat;
 	datain=mainaudio("input.wav",&size,&samplerate);
-
-	in = fftw_malloc( sizeof(double)*frames);
-	sizeout = frames/2 + 1;
-	out = fftw_malloc(sizeof(fftw_complex)*sizeout);
-	p = fftw_plan_dft_r2c_1d( frames , in , out , FFTW_ESTIMATE );
-
-	DSP=calloc(sizeout,sizeof(double));
-
-	duration = (double)size/samplerate;
-	minframeduration = (double)frames/samplerate;
-	sizeTmax = 2*floor(size/4096) + 2; // on prend une taille suffisamment large
+	duration=(double)size/samplerate;
 	
-	printf("Le fichier audio dure %lf s , il comporte %d éléments, la fréquence d'échantillonage est de %lf, en conséquence le tableau Tnote à %d éléments\n",duration,size,samplerate,sizeTmax);
-	
-	printf("Entrer le position du début de la porte ( sachant qu'on se décale d'une demie porte )\n");
+	printf("Le fichier audio dure %lf s , il comporte %d éléments, la fréquence d'échantillonage est de %lf, quelle taille de porte voulez vous choisir ?\n",duration,size,samplerate);
+	printf(" 1 : 2**11 soit %lf s\n",(double)2048/samplerate);
+	printf(" 2 : 2**12 soit %lf s\n",(double)4096/samplerate);
+	printf(" 3 : 2**13 soit %lf s\n",(double)8192/samplerate);
+	printf(" 4 : 2**14 soit %lf s\n",(double)16384/samplerate);
+	scanf("%d",&b);
+	switch (b)
+	{
+	case 1 : 
+		sizeframe = 2048;
+		break;
+	case 2 : 
+		sizeframe = 4096;
+		break;
+	case 3 : 
+		sizeframe = 8192;
+		break;
+	case 4 : 
+		sizeframe = 16384;
+		break;
+	default :
+		sizeframe = 4096;
+		break;
+	}
+	printf("Vous avez choisi une largeur de %lf s , sachant que lors du traitement on se déplace d'une demie-porte\n", (double)sizeframe/samplerate);
+	printf("décalage porte ?\n");
 	scanf("%d",&position);
-
-	for(i=0 ; i < frames ; i++){
-		if (i + position*frames/2 < size)in[i] = datain[ i + position*frames/2 ];
+	sizeout = sizeframe/2 +1;
+	in = fftw_malloc(sizeframe*sizeof(double));
+	for(i=0 ; i < sizeframe ; i++){
+		if (i + position*sizeframe/2 < size)in[i] = datain[ i + position*sizeframe/2 ];
 		else in[i] = 0;
 	}
-	t0 = position*frames/(2*samplerate);
-	tf = t0 + frames/samplerate;
-	printf("T0 %lf , Tf %lf \n",t0,tf);
-	fftw_execute(p);
-
-	for(i=0;i<sizeout;i++) DSP[i] = ( out[i][0]*out[i][0] + out[i][1]*out[i][1] );
-
-	textexport("datainoutput",in,frames,frames);
-	textexport("DSPout",DSP,sizeout,sizeout);
-
-	fftw_free(out);
-	fftw_destroy_plan(p);
-
-	/*
-	T=calloc( sizeTmax , sizeof(*T) );
-
-	initTnote( T , sizeTmax );
-
-	mainprocessing( T , datain , sizeTmax );
+	DSP=calloc(sizeout,sizeof(double));
+	short_time_DSP( in , sizeframe, DSP);
+	sizeTmax=2*(size/sizeframe)+2;
+	T=calloc(sizeTmax,sizeof(*T));
 	
-	printf("Entrez une résolution temporelle minimum pour la partition, sachant que la durée de la porte la plus petite utilisée est %lf\n",
-
-	T=resizeTnote( T , & sizeTmax , timeresolutionms );
-
-	mainmidi("outputmidi",T,sizeTmax);
-	*/
+	Mat=MatrixBW( sizeout , round(FMIN*sizeframe/samplerate) , round(BMIN*sizeframe/samplerate) ,B_m0_m2);
+	t0 = position*sizeframe/samplerate;
+	tf = t0 + sizeframe/samplerate;
+	printf("T0 %lf , Tf %lf \n",t0,tf);
+	printf("%d\n",BNMAX);
+	textexport_Mat("Matout",Mat,sizeout,BNMAX);
+	//textexport("Zout",Z,sizeout,sizeout);
+	//textexport("DSPout",DSP,sizeout,sizeout);
+	//textexport("Yout",Y,sizeout,sizeout);
+	//textexport("Nout",N,sizeout,sizeout);
+	
 	return 0;
 }
 
