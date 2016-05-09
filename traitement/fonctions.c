@@ -22,7 +22,7 @@
 #define BNMAX 17 // = floor(log(FMAX/FMIN)/log(4/3))+1 , ne pas oublier de l'ajuster si FMIN et FMAX sont modifiés
 
 
-int arraymultiplication( frame X, frame Y, int sizeframe , frame zb){
+int arraymultiplication( frame X, frame Y, int sizeframe , frame zb){ //OK
 	int i;
 	if(!X || !Y || !zb){
 		puts("erreur arraymultiplication()");
@@ -47,28 +47,27 @@ int zeros( int l ,frame t){ // OK
 }
 
 
-double * creer_notesBank( double samplerate , int sizeframe){ // les valeurs stockées sont des fréquences adaptées  à la transformée de fourrier rapide fftw
+double * creer_notesBank( double samplerate , int sizeframe){ //OK// les valeurs stockées sont des fréquences adaptées  à la transformée de fourrier rapide fftw
 	double * tab;
 	double k0 = (double)F0*sizeframe/samplerate;
 	int i;
-	tab=calloc(NBNOTES,sizeof(*tab));
+	tab=calloc(NBNOTES,sizeof(double));
 	for (i=0;i<NBNOTES;i++){
 		tab[i]=k0*pow(2,(double)i/12);}
 	return tab;
 }
 
 
-double incertitude ( double knotes ){
+double incertitude ( double knotes ){ // OK
 	double i;
 	i = knotes*(pow(2,(float)1/12)-1)/2; // incertitude d'un quart de ton , peut être un peu large , cela autorise une imprécision de 6 %
 	return i ;
 }   
 
 
-char correspondancenote( double kech , double * notesBank){
+char correspondancenote( double kech , double * notesBank){ // OK // les notes midi vont de 21 à 108 pour un piano ( 88 touches )
 	int j;
-	char note = -1;// valeur par défaut, si elle vaut -1 la correspondance note> fréquence n'a pas été concluante
-	int n = NBNOTES;
+	char note = 0;// valeur par défaut, si elle vaut -1 la correspondance note> fréquence n'a pas été concluante
 	for(j=0;j<NBNOTES;j++) {
 		if ( abs(notesBank[j]-kech) < incertitude(notesBank[j]) ){
 			note = j + OFFSETMIDI; // + OFFSETMIDI pour s'adapter à la numérotation midi des notes
@@ -78,18 +77,18 @@ char correspondancenote( double kech , double * notesBank){
 }
 
 
-double * Y_extraction(double * X, int taille, int k0 , int k1){
+double * Y_extraction(double * X, int taille, int k0 , int k1){ // OK
 	int l = k0;
 	double g, somme = 0;
 	int i;
 	double * Y = NULL;
 
 	while(l<k1){
-		somme += pow(X[l],1/3);
+		somme += pow(X[l],(double)1/3);
 		l += 1;
 	}
 
-	somme = somme/(k1-k0+1);
+	somme = (double)somme/(k1-k0+1);
 	g = pow(somme,3);
 
 	printf("g = %lf\n",g);
@@ -97,7 +96,7 @@ double * Y_extraction(double * X, int taille, int k0 , int k1){
 	Y = calloc(taille, sizeof(*Y));
 
 	for(i=0;i<taille;i++){
-		Y[i] = log(1 + X[i]/g);
+		Y[i] = log(1 + (double)X[i]/g);
 	
 	}
 	return Y;
@@ -131,24 +130,23 @@ int moving_average(double * Y, double ratio, int taille , frame movingA){
 }
 
 
-double * Z_calc(double * Y, double * N, int taille){
+double * Z_calc(double * Y, double * N, int sizeframe){
 	int i;
-	double * Z = calloc(taille,sizeof(*Z));
+	double * Z = calloc(sizeframe,sizeof(*Z));
 	if(!Z) return NULL;
-	for(i=0;i<taille;i++){
+	for(i=0;i<sizeframe;i++){
 		Z[i] = ((Y[i]-N[i])> 0) ? Y[i]-N[i] : 0;
 	}
 	return Z;
 }
 
 
-frame noisesup( frame X , int k0 , int k1 , int taille , double ratio, frame N){
+frame noisesup( frame X , int k0 , int k1 , int sizeframe , double ratio, frame N){
 	frame Y;
 	frame Z;
-	Y = Y_extraction( X , taille , k0 , k1);
-	moving_average( Y , ratio , taille , N);
-	Z = Z_calc( Y , N , taille );
-	free(Y);
+	Y = Y_extraction( X , sizeframe , k0 , k1);
+	moving_average( Y , ratio , sizeframe , N);
+	Z = Z_calc( Y , N , sizeframe );
 	return Z;
 }
 
@@ -260,11 +258,10 @@ int F0fromL(double* L, int taille){ // remplacée par max_valueandposition_frame
  
 
 
-void functionBW (double * b , double kmin , int sizeframe , double kb , double * M0 , double * M2){   //OK
+void functionBW (double * b , double kmin , int sizeframe , double kb , double * M0 , double * M2,double ratio){   //OK
 	int i;
 	double kb1=round(kb);
 	double m1,b1,a1,b2,a2;
-	double ratio = RATIOBANDE;
 	
 	if(!b || !M0 || !M2){
 		puts("erreur functionBW");
@@ -333,15 +330,14 @@ double ** MatrixBW(int sizeframe , int k0 , double kmin , double * B_m0_m2){
 	}
 	for(i=0;i < BNMAX;i++){ // on fait l'allocation et le calcul des passe-bandes triangulaires en même temps
 		if(i>0){
-			BankBW[i] = BankBW[i-1 + sizeframe ];
+			BankBW[i] = BankBW[i-1] + sizeframe ;
 			kb=kb*4./3.;
-			functionBW(BankBW[i] , kmin , sizeframe , kb , M0 , M2);
+			functionBW(BankBW[i] , kmin , sizeframe , kb , M0 , M2, RATIOBANDE);
 			B_m0_m2[2*i] = round(*M0);
 			B_m0_m2[2*i+1] = floor(*M2)+1;
 		}
 		else{
-			kb=kb*4./3.;
-			functionBW(BankBW[i] , kmin , sizeframe , kb , M0 , M2);
+			functionBW(BankBW[i] , kmin , sizeframe , kb , M0 , M2, RATIOBANDE);
 			B_m0_m2[0] = round(*M0);
 			B_m0_m2[1] = floor(*M2)+1;
 		}
@@ -373,7 +369,7 @@ void Z_smoothing(double* z, int taille , int k , int kmin){		//  NON Testée
 
 		kb = i-i*RATIOLISSAGE/2;
 		rb = 2*RATIOLISSAGE/(2-RATIOLISSAGE); // la fonction crée une porte triangulaire à partir de kb, ici on veut qu'elle soit centrée sur i, c'est pourquoi on fait intervenir un ratio de lissage différent du ratio qu'on utilise pour le traitement du bruit
-		functionBW(b,kmin,taille,kb,M0,M2); // largeur minimale de 100hz ( à voir ) , fixé par kb*ratio sinon.
+		functionBW(b,kmin,taille,kb,M0,M2,rb); // largeur minimale de 100hz ( à voir ) , fixé par kb*ratio sinon.
 
 		for(i=0;i<taille;i++){
 			zb[i]=z[i]*b[i];
@@ -407,36 +403,38 @@ void Z_smoothing(double* z, int taille , int k , int kmin){		//  NON Testée
 
 
 
-void initTnote( Tnote T , int sizeTmax){
+void initTnote( Tnote T , int sizeTmax , int sizeframe , int samplerate){
 	int i;
 	int j;
+	int tmin=sizeframe/samplerate;
 	if(!T){
 		puts("erreur initTnote()");		
 		return;
 	}
 	for(i=0;i<sizeTmax;i++){
 		T[i].temps=-1.0 ;
-		for(j=0;j<SIZE_TABCHORD;j++) T[i].tabchord[j].note = -1 ;
+		for(j=0;j<SIZE_TABCHORD;j++){
+			T[i].tabchord[j].note = -1 ;
+			T[i].tabchord[j].duree = tmin ;
+			
+		}
 	}
 }
 
 
-frame short_time_DSP( frame x , int sizeframe){ // il est possible d'optimiser l'utilisation des plans p, x doit étre alloué par fftw_malloc() de la librairie fftw
+void short_time_DSP( frame x , int sizeframe , frame DSP){ // OK// il est possible d'optimiser l'utilisation des plans p, x doit étre alloué par fftw_malloc() de la librairie fftw
 	fftw_complex * out;
 	fftw_plan p;
-	frame DSP;
 	int sizeout;
 	int i;
 	if( !x ){
 		printf("short_time_DSP() frame x = NULL\n");
-		return NULL;
+		return;
 	}
 	
 	sizeout = sizeframe/2 + 1;
 	out = fftw_malloc(sizeof(fftw_complex)*sizeout);
 	p = fftw_plan_dft_r2c_1d( sizeframe , x , out , FFTW_ESTIMATE );
-
-	DSP=calloc(sizeout,sizeof(double));
 	
 	fftw_execute(p);	
 	
@@ -444,8 +442,6 @@ frame short_time_DSP( frame x , int sizeframe){ // il est possible d'optimiser l
 	
 	fftw_free(out);
 	fftw_destroy_plan(p);
-	
-	return DSP;
 }
 
 void lbvector(frame zb , int sizeframe , int KB , int kb , int U0 , double * Lb){
@@ -547,7 +543,6 @@ int boucle(chord * tabchord , frame Z , int sizeframe , double SNR , int kmin , 
 	int ks;
 	int  kmax;
 	double Lmax;
-	double v;
 	double deltavi;
 	double vi;
 	int itcheck;
@@ -591,26 +586,28 @@ int boucle(chord * tabchord , frame Z , int sizeframe , double SNR , int kmin , 
 	
 
 int frameprocessing( chord * tabchord , frame x , int sizeframe , double samplerate, int kmin, int k0 , int k1 , double ** MatrixB, double * b_m0_m2 , double * NoteBank , double * thresv0 , double * thresvi){
-	frame X;
 	frame N;
 	frame Z;
 	double SNR;
 	int b=0;
-	X = short_time_DSP( x , sizeframe );
-	if(!X ){
-		printf("frameprocessing() X NULL\n");
+	double *DSP;
+	DSP=calloc(sizeframe/2+1,sizeof(double));
+	short_time_DSP( x , sizeframe , DSP);
+	if(!DSP ){
+		printf("frameprocessing() DSP NULL\n");
 		return 0;
 	}
-	N = calloc(sizeframe, sizeof(double));
-	SNR = SNR_calc( X , N , sizeframe , k0 , k1);
-	Z  = noisesup( X , k0 , k1 , sizeframe , (double)2./3. , N );
+	N = calloc(sizeframe/2+1, sizeof(double));
+	SNR = SNR_calc( DSP , N , sizeframe/2+1 , k0 , k1);
+	Z  = noisesup( DSP , k0 , k1 , sizeframe/2+1 , (double)2./3. , N );
 
-	free(X); // une fois que le rapport signal sur bruit (SNR) est calculé, N et X sont inutiles
+	free(DSP); // une fois que le rapport signal sur bruit (SNR) est calculé, N et X sont inutiles
 	free(N);
 
-	b=boucle(tabchord,Z,sizeframe,SNR,kmin,*thresv0,*thresvi,k0,k1,MatrixB,b_m0_m2,NoteBank);
-	if(b==0) return 0; // 0 si rien n'a été modifié dans tabchord
-	else return 1; // 1 si on a au moins une note, en sachant que b représente le nombre de notes détectées
+	b=boucle(tabchord,Z,sizeframe/2+1,SNR,kmin,*thresv0,*thresvi,k0,k1,MatrixB,b_m0_m2,NoteBank);
+	free(Z);
+	if(b>0) return 1; // 0 si rien n'a été modifié dans tabchord
+	else return 0; // 1 si on a au moins une note, en sachant que b représente le nombre de notes détectées
 }
 	
 	
@@ -645,7 +642,7 @@ void mainprocessing( Tnote  T , int sizeTmax , double * datain , int sizedatain 
 	double thresvi;
 	double * NotesBank=creer_notesBank( samplerate , sizeframe );
 	double * B_m0_m2 = calloc(BNMAX*2,sizeof(double));
-	double ** MatrixB = MatrixBW( sizeframe , k0 ,  kmin , B_m0_m2);
+	double ** MatrixB = MatrixBW( sizeframe/2+1, k0 ,  kmin , B_m0_m2);
 	double time; // en secondes
 
 	frame x = fftw_malloc(sizeframe*sizeof(double)); // allocation spécifique à la librairie de fftw
@@ -663,7 +660,7 @@ void mainprocessing( Tnote  T , int sizeTmax , double * datain , int sizedatain 
 		return ;
 	}
 	
-	initTnote( T , sizeTmax );
+	initTnote( T , sizeTmax , sizeframe , samplerate );
 	while(j < sizedatain ){
 		for( i=0 ; i < sizeframe ; i++ ) x[i] = datain[i+j];
 		b = frameprocessing(T[k].tabchord ,  x , sizeframe ,  samplerate,  kmin,  k0 ,  k1 ,   MatrixB,   B_m0_m2 ,  NotesBank , &thresv0 , &thresvi);

@@ -8,9 +8,20 @@
 #include <time.h>
 #include "../midi/midi.h"
 
+#define F0 27.5000 // fréquence fondamentale utilisée pour calculer toutes le autres notes
+#define OFFSETMIDI 21 // décalage du numéro des notes pour correspondre à la notation midi 
+#define RATIOLISSAGE (double)1 // ratio pour le lissage
+#define RATIOBANDE (double)2/3 // ratio pour le calcul des bandes passantes triangulaires
+#define DELTAMIN 0.00001 // permet d'ajouter une condition pour la boucle() , si vi n'est pas assez modifié , la boucle est arrétée
+#define NBNOTES 128 // nombre de notes selon lesquelles des correspondances ( N°note <> fréquence ] s'effectuent
+#define BMIN 100 //largeur minimale des portes triangulaires
+#define FMIN 50 // fréquence minimale a partir de laquelle les traitements se font
+#define FMAX 6000 // fréquence maximale en dessous de laquelle les traitements s'opèrent
+#define BNMAX 17 
+
 typedef double * frame;
-int arraymultiplication( frame X, frame Y, int sizeframe , frame zb);
-int zeros( int l ,frame t);
+int arraymultiplication( frame X, frame Y, int sizeframe , frame zb); // OK
+int zeros( int l ,frame t); // OK
 double * creer_notesBank( double samplerate , int sizeframe);
 double incertitude ( double knotes );
 char correspondancenote( double kech , double * notesBank);
@@ -23,11 +34,11 @@ int iteration_checking( double Lmaxi , double SNR , double threshold ,double * v
 double mean(double* T,double m0,double m2);
 double * npow( double* meanx, int k1,int k0,int taille);
 double SNR_calc( frame X , frame N , int sizeframe, int k0, int k1 );
-void functionBW (double * b , double kmin , int sizeframe , double kb , double * M0 , double * M2);
+void functionBW (double * b , double kmin , int sizeframe , double kb , double * M0 , double * M2 , double ratio);
 double ** MatrixBW(int sizeframe , int k0 , double kmin , double * B_m0_m2);
 void Z_smoothing(double* z, int taille , int k , int kmin);
-void initTnote( Tnote T , int sizeTmax);
-frame short_time_DSP( frame x , int sizeframe);
+void initTnote( Tnote T , int sizeTmax , int sizeframe , int samplerate);
+void short_time_DSP( frame x , int sizeframe, frame DSP);
 void lbvector(frame zb , int sizeframe , int KB , int kb , int U0 , double * Lb);
 void Lvector( frame Z , int sizeframe , int kmin , frame L ,double ** MatrixB , double * b_m0_m2);
 int boucle(chord * tabchord , frame Z , int sizeframe , double SNR , int kmin , double thresv0 , double thresvi , int k0 , int k1, double ** MatrixB , double * b_m0_m2 , double * NotesBank);
