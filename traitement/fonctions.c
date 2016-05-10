@@ -626,6 +626,47 @@ double max_valueandposition_frame(frame X , int sizeframe , int * kmax){
 	return M;
 }
 
+int zerostabofchar( int l ,char* t){
+	int i;
+	if(!t){
+		puts("erreur zeros()");
+		return 0;
+	}
+	else{
+		for(i=0;i<l;i++) t[i]=0;
+	return 1;
+	}
+}
+
+notes * simplifT(Tnote T,int SIZE_T,double tmin){		//Testée
+	int i;
+	int j;
+	int k;
+	int l;
+	double dT;
+	char tnote[SIZE_TABCHORD];
+	zerostabofchar(SIZE_TABCHORD,tnote);
+	for(i=1;i<SIZE_T;i++){
+		j=SIZE_T-i;
+		dT = T[j].temps-T[j-1].temps;
+		if(dT<=tmin){
+			for(k=0;k<SIZE_TABCHORD;k++){
+				tnote[k]=T[j].tabchord[k].note;
+			}
+			for(k=0;k<SIZE_TABCHORD;k++){
+				for(l=0;l<SIZE_TABCHORD;l++){
+					if(tnote[l]==T[j-1].tabchord[k].note){
+						T[j].tabchord[l].note = 0;
+						T[j-1].tabchord[k].duree += T[j].tabchord[k].duree;
+						T[j].tabchord[l].duree = 0;
+					}
+				}
+			}
+		}
+	}
+	return(T);
+}
+
 
 
 void mainprocessing( Tnote  T , int sizeTmax , double * datain , int sizedatain  , double samplerate , int sizeframe){
@@ -674,18 +715,6 @@ void mainprocessing( Tnote  T , int sizeTmax , double * datain , int sizedatain 
 	fftw_free(x);
 	free(NotesBank);
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
