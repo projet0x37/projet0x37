@@ -29,22 +29,22 @@ double * Y_extraction(double * X, int taille, int k0 , int k1); //ok
 int moving_average(double * Y, double ratio, int taille , frame movingA);//ok
 double * Z_calc(double * Y, double * N, int taille);//ok
 frame noisesup( frame X , int k0 , int k1 , int taille , double ratio, frame N);//ok
-int processing_init( double Lmax , double SNR , double threshold );
-int iteration_checking( double Lmaxi , double SNR , double threshold ,double * vi);
+int processing_init( double Lmax , double SNR );
+int iteration_checking( double Lmaxi , double SNR , double * vi);
 double mean(double* T,double m0,double m2);//ok
 double * npow( double* meanx, int k1,int k0,int taille);
 double SNR_calc( frame X , frame N , int sizeframe, int k0, int k1 );
 void functionBW (double * b , double kmin , int sizeframe , double kb , double * M0 , double * M2 , double ratio);//ok
 double ** MatrixBW(int sizeframe , double k0 , double kmin , double * B_m0_m2);//ok
-void Z_smoothing(double* z, int taille , int k , int kmin);
-void initTnote( Tnote T , int sizeTmax , int sizeframe , int samplerate); 
-void short_time_DSP( frame x , int sizeframe, frame DSP);
-void lbvector(frame zb , int sizeframe , int KB , int kb , int U0 , double * Lb);
-void Lvector( frame Z , int sizeframe , int kmin , frame L ,double ** MatrixB , double * b_m0_m2);
-int boucle(chord * tabchord , frame Z , int sizeframe , double SNR , int kmin , double thresv0 , double thresvi , int k0 , int k1, double ** MatrixB , double * b_m0_m2 , double * NotesBank);
-void Hamming( frame x , int sizeframe );
-int frameprocessing( chord * tabchord , frame x , int sizeframe , double samplerate, int kmin, int k0 , int k1 , double ** MatrixB, double * b_m0_m2 , double * NoteBank, double * thresv0 , double * thresvi);
-double max_valueandposition_frame(frame X , int sizeframe , int * kmax);
+void Z_smoothing(double* z, int taille , int k , int kmin); // ok
+void initTnote( Tnote T , int sizeTmax , int sizeframe , int samplerate); //OK
+void short_time_DSP( frame x , int sizeframe, frame DSP); //OK
+void lbvector(frame zb , int sizeframe , int KB , int kb , int U0 , double * Lb); // a priori Ok 
+void Lvector( frame Z , int sizeframe , int kmin , frame L ,double ** MatrixB , double * b_m0_m2); //OK
+int boucle(chord * tabchord , frame Z , int sizeframe , double SNR , int kmin , int k0 , int k1, double ** MatrixB , double * b_m0_m2 , double * NotesBank);
+void Hamming( frame x , int sizeframe ); // OK
+int frameprocessing( chord * tabchord , frame x , int sizeframe , double samplerate, int kmin, int k0 , int k1 , double ** MatrixB, double * b_m0_m2 , double * NoteBank);
+double max_valueandposition_frame(frame X , int sizeframe , int * kmax); // OK
 void mainprocessing( Tnote  T , int sizeTmax , double * datain , int sizedatain  , double samplerate , int sizeframe);
 
 #endif /* fonctions_h */

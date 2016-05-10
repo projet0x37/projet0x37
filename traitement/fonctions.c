@@ -22,6 +22,10 @@
 #define BNMAX 17 // = floor(log(FMAX/FMIN)/log(4/3))+1 , ne pas oublier de l'ajuster si FMIN et FMAX sont modifiés
 
 
+
+extern double facteurmoyenne;
+extern double thresv0;
+extern double thresvi;
 int arraymultiplication( frame X, frame Y, int sizeframe , frame zb){ //OK
 	int i;
 	if(!X || !Y || !zb){
@@ -104,7 +108,7 @@ double * Y_extraction(double * X, int taille, int k0 , int k1){ // OK
 }
 
 
-int moving_average(double * Y, double ratio, int taille , frame movingA){
+int moving_average(double * Y, double ratio, int taille , frame movingA){ // OK
 	double localA = 0;
 	int i,j;
 	if(!Y || !movingA){
@@ -121,7 +125,7 @@ int moving_average(double * Y, double ratio, int taille , frame movingA){
 				for( j=i-round(ratio*i/2) ; j<=i+round(ratio*i/2) ; j++ ){
 					localA += Y[j];
 				}
-			movingA[i] = localA/(ratio*i);
+			movingA[i] = facteurmoyenne*localA/(ratio*i);
 			}
 		}
 		return 1;
@@ -130,7 +134,7 @@ int moving_average(double * Y, double ratio, int taille , frame movingA){
 }
 
 
-double * Z_calc(double * Y, double * N, int sizeframe){
+double * Z_calc(double * Y, double * N, int sizeframe){ // ok
 	int i;
 	double * Z = calloc(sizeframe,sizeof(*Z));
 	if(!Z) return NULL;
@@ -141,7 +145,7 @@ double * Z_calc(double * Y, double * N, int sizeframe){
 }
 
 
-frame noisesup( frame X , int k0 , int k1 , int sizeframe , double ratio, frame N){
+frame noisesup( frame X , int k0 , int k1 , int sizeframe , double ratio, frame N){ // ok
 	frame Y;
 	frame Z;
 	Y = Y_extraction( X , sizeframe , k0 , k1);
@@ -151,24 +155,24 @@ frame noisesup( frame X , int k0 , int k1 , int sizeframe , double ratio, frame 
 }
 
 
-int processing_init( double Lmax , double SNR , double threshold ){
+int processing_init( double Lmax , double SNR ){
 	double v0=0;
 	v0=4*log(Lmax)+log(SNR);
-	if (v0>threshold) return 1;
-	if (v0<=threshold) return 0;
+	if (v0>thresv0) return 1;
+	if (v0<=thresv0) return 0;
 	return -1;
 }
 
 
-int iteration_checking( double Lmaxi , double SNR , double threshold ,double * vi){
+int iteration_checking( double Lmaxi , double SNR ,double * vi){
 	*vi=1.8*log(Lmaxi)-log(SNR);
-	if (*vi>threshold) return 1;
-	if (*vi<=threshold) return 0;
+	if (*vi>thresvi) return 1;
+	if (*vi<=thresvi) return 0;
 	return -1;
 }
 
 
-double mean(double* T,double m0,double m2){   //Calcul la moyenne entre m0 et m2 //Testée et Approuvée
+double mean(double* T,double m0,double m2){   //OK
 	double S = 0;
 	int i;
 	if(!T){
@@ -286,7 +290,7 @@ void functionBW ( double * b , double kmin , int sizeframe , double kb , double 
 }
 
 
-double ** MatrixBW(int sizeframe , double k0 , double kmin , double * B_m0_m2){
+double ** MatrixBW(int sizeframe , double k0 , double kmin , double * B_m0_m2){ // OK
 	double ** BankBW;
 	int i;
 	double kb = k0;
@@ -323,7 +327,7 @@ double ** MatrixBW(int sizeframe , double k0 , double kmin , double * B_m0_m2){
 }
 
 
-void Z_smoothing(double* z, int taille , int k , int kmin){		//  NON Testée
+void Z_smoothing(double* z, int taille , int k , int kmin){		//  OK
 	double * zsmoothed = calloc(taille,sizeof(*zsmoothed));
 	int i = k;
 	double nfactor;		//facteur permettant de réhausser la moyenne pondérée (on suppose que les fondamentales sont détectées de manière croissante : il 						n'y à alors pas d'inconvénient à supprimer celle détectée).
@@ -347,16 +351,15 @@ void Z_smoothing(double* z, int taille , int k , int kmin){		//  NON Testée
 		rb = 2*RATIOLISSAGE/(2-RATIOLISSAGE); // la fonction crée une porte triangulaire à partir de kb, ici on veut qu'elle soit centrée sur i, c'est pourquoi on fait intervenir un ratio de lissage différent du ratio qu'on utilise pour le traitement du bruit
 		functionBW(b,kmin,taille,kb,M0,M2,rb); // largeur minimale de 100hz ( à voir ) , fixé par kb*ratio sinon.
 
-		for(i=0;i<taille;i++){
-			zb[i]=z[i]*b[i];
+		for(j=0;j<taille;j++){
+			zb[j]=z[j]*b[j];
 		}
 
 		mz = mean(zb,*M0,*M2);
 		mb = mean(b,*M0,*M2);
-		m = mz/mb;
+		m = mz/mb; // moyenne pondérée ici
 
 		if(i==k && m!=0) nfactor = (double)z[i]/m;
-
 		m = m*nfactor;
         	j0 = floor(i-pow(i,1/12)*(3/4));
        		j1 = floor(i+pow(i,1/12)*(3/4))+1;
@@ -374,11 +377,6 @@ void Z_smoothing(double* z, int taille , int k , int kmin){		//  NON Testée
 	for(i=0;i<taille;i++){
 		z[i] = z[i]-zsmoothed[i];
 	}
-	free(zb);
-	free(b);
-	free(M0);
-	free(M2);
-	free(zsmoothed);
 }
 
 
@@ -387,7 +385,7 @@ void Z_smoothing(double* z, int taille , int k , int kmin){		//  NON Testée
 void initTnote( Tnote T , int sizeTmax , int sizeframe , int samplerate){
 	int i;
 	int j;
-	int tmin=sizeframe/samplerate;
+	double tmin=(double)sizeframe/samplerate;
 	if(!T){
 		puts("erreur initTnote()");		
 		return;
@@ -395,11 +393,12 @@ void initTnote( Tnote T , int sizeTmax , int sizeframe , int samplerate){
 	for(i=0;i<sizeTmax;i++){
 		T[i].temps=-1.0 ;
 		for(j=0;j<SIZE_TABCHORD;j++){
-			T[i].tabchord[j].note = -1 ;
+			T[i].tabchord[j].note = (char)-1 ;
 			T[i].tabchord[j].duree = tmin ;
 			
 		}
 	}
+	printf("%d %d\n",i,j);
 }
 
 
@@ -509,13 +508,11 @@ void Lvector( frame Z , int sizeframe , int kmin , frame L ,double ** MatrixB , 
 		lbvector( zb ,  sizeframe , KB , m0 , k0 ,  lb);
 		for(j=0;j<sizeframe;j++)L[j]=L[j] + lb[j];
 	}
-	free(zb);
-	free(lb);
 }
 	
 
 
-int boucle(chord * tabchord , frame Z , int sizeframe , double SNR , int kmin , double thresv0 , double thresvi , int k0 , int k1, double ** MatrixB , double * b_m0_m2 , double * NotesBank){
+int boucle(chord * tabchord , frame Z , int sizeframe , double SNR , int kmin , int k0 , int k1, double ** MatrixB , double * b_m0_m2 , double * NotesBank){
 	int b=1;
 	frame L;
 	int i=0;
@@ -548,7 +545,7 @@ int boucle(chord * tabchord , frame Z , int sizeframe , double SNR , int kmin , 
 		Lmax = max_valueandposition_frame(L,sizeframe, &kmax);
 		
 		if(i==1){
-			if(processing_init( Lmax , SNR , thresv0) == 1){
+			if(processing_init( Lmax , SNR) == 1){
 				tabchord[i].note = correspondancenote( kmax , NotesBank );
 				Z_smoothing( Z, sizeframe , kmax , kmin);
 				i++;
@@ -557,7 +554,7 @@ int boucle(chord * tabchord , frame Z , int sizeframe , double SNR , int kmin , 
 		}
 		else{
 			deltavi = vi;
-			itcheck = iteration_checking( Lmax , SNR ,  thresvi , &vi);
+			itcheck = iteration_checking( Lmax , SNR , &vi);
 			deltavi = abs( deltavi - vi );
 			if( itcheck == 1 && i < 11 && deltavi > DELTAMIN ){ // on suppose qu'il est impossible de détecter plus de 10 notes , cela permet de limiter la boucle quoi qu'il arrive
 				tabchord[i].note = correspondancenote( kmax , NotesBank );
@@ -580,7 +577,7 @@ void Hamming( frame x , int sizeframe ){
 }
 
 
-int frameprocessing( chord * tabchord , frame x , int sizeframe , double samplerate, int kmin, int k0 , int k1 , double ** MatrixB, double * b_m0_m2 , double * NoteBank , double * thresv0 , double * thresvi){
+int frameprocessing( chord * tabchord , frame x , int sizeframe , double samplerate, int kmin, int k0 , int k1 , double ** MatrixB, double * b_m0_m2 , double * NoteBank ){
 	frame N;
 	frame Z;
 	double SNR;
@@ -603,7 +600,7 @@ int frameprocessing( chord * tabchord , frame x , int sizeframe , double sampler
 	free(DSP); // une fois que le rapport signal sur bruit (SNR) est calculé et que X est traité , N et X sont inutiles
 	free(N);
 
-	b=boucle(tabchord,Z,sizeframe/2+1,SNR,kmin,*thresv0,*thresvi,k0,k1,MatrixB,b_m0_m2,NoteBank);
+	b=boucle(tabchord,Z,sizeframe/2+1,SNR,kmin,k0,k1,MatrixB,b_m0_m2,NoteBank);
 	free(Z);
 	if(b>0) return 1; // 0 si rien n'a été modifié dans tabchord
 	else return 0; // 1 si on a au moins une note, en sachant que b représente le nombre de notes détectées
@@ -619,7 +616,7 @@ double max_valueandposition_frame(frame X , int sizeframe , int * kmax){
 	}
 	for(i=0;i<sizeframe;i++){
 		if(X[i] > M){
-			if(!kmax) *kmax = i;
+			if(kmax) *kmax = i; // on peut choisir de mettre kmax=NULL; et dans ce cas la fonction ne renvoie que la valeur maximale
 			M = X[i];
 		}
 	}
@@ -636,18 +633,13 @@ void mainprocessing( Tnote  T , int sizeTmax , double * datain , int sizedatain 
 	double k0 = (double)FMIN*sizeframe/samplerate;
 	double k1 = (double)FMAX*sizeframe/samplerate;
 	double kmin = (double)BMIN*sizeframe/samplerate;
-	double thresv0;
-	double thresvi;
 	double * NotesBank = creer_notesBank( samplerate , sizeframe );
 	double * B_m0_m2 = calloc(BNMAX*2,sizeof(double));
 	double ** MatrixB = MatrixBW( sizeframe/2+1, k0 ,  kmin , B_m0_m2);
 	double time; // en secondes
 
 	frame x = fftw_malloc(sizeframe*sizeof(double)); // allocation spécifique à la librairie de fftw
-	puts("Entrer les valeurs de Thresv0 et Thresvi");
-	scanf("%lf",&thresv0);
-	scanf("%lf",&thresvi);
-	printf("Thresv0 : %lf\nThresvi : %lf\n",thresv0,thresvi);
+	
 	if(!x || !datain ){
 		puts(" x ou datain NULL");
 		return ;
@@ -661,7 +653,7 @@ void mainprocessing( Tnote  T , int sizeTmax , double * datain , int sizedatain 
 	initTnote( T , sizeTmax , sizeframe , samplerate );
 	while(j < sizedatain ){
 		for( i=0 ; i < sizeframe ; i++ ) x[i] = datain[i+j];
-		b = frameprocessing(T[k].tabchord ,  x , sizeframe ,  samplerate,  kmin,  k0 ,  k1 ,   MatrixB,   B_m0_m2 ,  NotesBank , &thresv0 , &thresvi);
+		b = frameprocessing(T[k].tabchord ,  x , sizeframe ,  samplerate,  kmin,  k0 ,  k1 ,   MatrixB,   B_m0_m2 ,  NotesBank);
 		if( b == 1 ){ // au moins une note a été détectée donc on stocke le temps de détection et on incrémente k
 			time = (j+sizeframe/2)*samplerate/sizeframe; // le temps de détection correspond au centre de la porte
 			T[k].temps = time;
@@ -669,10 +661,6 @@ void mainprocessing( Tnote  T , int sizeTmax , double * datain , int sizedatain 
 		}
 		j += sizeframe/2; // on avance d'une demie porte
 	}
-	free(B_m0_m2);
-	free(MatrixB);
-	fftw_free(x);
-	free(NotesBank);
 }
 
 
