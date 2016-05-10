@@ -26,6 +26,8 @@
 extern double facteurmoyenne;
 extern double thresv0;
 extern double thresvi;
+
+
 int arraymultiplication( frame X, frame Y, int sizeframe , frame zb){ //OK
 	int i;
 	if(!X || !Y || !zb){
@@ -623,6 +625,7 @@ double max_valueandposition_frame(frame X , int sizeframe , int * kmax){
 	return M;
 }
 
+
 int zerostabofchar( int l ,char* t){
 	int i;
 	if(!t){
@@ -634,6 +637,7 @@ int zerostabofchar( int l ,char* t){
 	return 1;
 	}
 }
+
 
 notes * simplifT(Tnote T,int SIZE_T,double tmin){		//Testée
 	int i;

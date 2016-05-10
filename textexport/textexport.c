@@ -22,7 +22,6 @@ void textexport_Mat(char * textname , double ** data , int colonne, int ligne){
 	f1=fopen(textname,"w");
 	if(data){
 		for(j=0;j<ligne;j++){
-			printf("%d\n",j);
 			for(i=0;i<colonne;i++){
 				if(i==colonne-1)fprintf(f1,"%lf\n",data[j][i]);
 				else fprintf(f1,"%lf ",data[j][i]);
