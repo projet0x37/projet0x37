@@ -22,22 +22,22 @@
 typedef double * frame;
 int arraymultiplication( frame X, frame Y, int sizeframe , frame zb); // OK
 int zeros( int l ,frame t); // OK
-double * creer_notesBank( double samplerate , int sizeframe);
-double incertitude ( double knotes );
-char correspondancenote( double kech , double * notesBank);
-double * Y_extraction(double * X, int taille, int k0 , int k1);
-int moving_average(double * Y, double ratio, int taille , frame movingA);
-double * Z_calc(double * Y, double * N, int taille);
-frame noisesup( frame X , int k0 , int k1 , int taille , double ratio, frame N);
+double * creer_notesBank( double samplerate , int sizeframe); //OK
+double incertitude ( double knotes ); // OK
+char correspondancenote( double kech , double * notesBank); 
+double * Y_extraction(double * X, int taille, int k0 , int k1); //ok
+int moving_average(double * Y, double ratio, int taille , frame movingA);//ok
+double * Z_calc(double * Y, double * N, int taille);//ok
+frame noisesup( frame X , int k0 , int k1 , int taille , double ratio, frame N);//ok
 int processing_init( double Lmax , double SNR , double threshold );
 int iteration_checking( double Lmaxi , double SNR , double threshold ,double * vi);
-double mean(double* T,double m0,double m2);
+double mean(double* T,double m0,double m2);//ok
 double * npow( double* meanx, int k1,int k0,int taille);
 double SNR_calc( frame X , frame N , int sizeframe, int k0, int k1 );
-void functionBW (double * b , double kmin , int sizeframe , double kb , double * M0 , double * M2 , double ratio);
-double ** MatrixBW(int sizeframe , int k0 , double kmin , double * B_m0_m2);
+void functionBW (double * b , double kmin , int sizeframe , double kb , double * M0 , double * M2 , double ratio);//ok
+double ** MatrixBW(int sizeframe , double k0 , double kmin , double * B_m0_m2);//ok
 void Z_smoothing(double* z, int taille , int k , int kmin);
-void initTnote( Tnote T , int sizeTmax , int sizeframe , int samplerate);
+void initTnote( Tnote T , int sizeTmax , int sizeframe , int samplerate); 
 void short_time_DSP( frame x , int sizeframe, frame DSP);
 void lbvector(frame zb , int sizeframe , int KB , int kb , int U0 , double * Lb);
 void Lvector( frame Z , int sizeframe , int kmin , frame L ,double ** MatrixB , double * b_m0_m2);

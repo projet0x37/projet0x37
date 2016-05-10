@@ -232,35 +232,11 @@ double SNR_calc( frame X , frame N , int sizeframe, int k0, int k1 ){
 		return -1;
 	}
 }
-
-/*
-int F0fromL(double* L, int taille){ // remplacée par max_valueandposition_frame()
-	int i;
-	double M=-1;
-	int fM;
-	if(!L){
-		puts("Erreur : L est vide");
-		return(0);
-	}
-	for(i=0;i<taille;i++){
-		if(L[i]>M){
-			M = L[i];
-			fM = i;
-		}
-	}
-	return(fM);
-}
-*/
-
-
-
-
  
 
-
-void functionBW (double * b , double kmin , int sizeframe , double kb , double * M0 , double * M2,double ratio){   //OK
+void functionBW ( double * b , double kmin , int sizeframe , double kb , double * M0 , double * M2, double ratio ){   //OK
 	int i;
-	double kb1=round(kb);
+	double kb1 = kb;
 	double m1,b1,a1,b2,a2;
 	
 	if(!b || !M0 || !M2){
@@ -273,12 +249,12 @@ void functionBW (double * b , double kmin , int sizeframe , double kb , double *
 	if (kb1*ratio > kmin) {
 		*M0 = kb1;
 		*M2 = *M0+(*M0)*ratio;
-		m1 = (*M0+*M2)/2;
+		m1 = (*M0+*M2)/2.;
 		b1 = *M0/(*M0-m1);
-		a1 = 1/(m1-*M0);
+		a1 = 1./(m1-*M0);
 		b2 = *M2/(*M2-m1);
-		a2 = 1/(m1-*M2);
-		i = *M0;
+		a2 = 1./(m1-*M2);
+		i = floor(*M0)+1;
 		while (i <= m1 && i<sizeframe){      
 			b[i] = a1*i+b1;
 			i=i+1;
@@ -296,7 +272,7 @@ void functionBW (double * b , double kmin , int sizeframe , double kb , double *
 		a1 = 1/(m1-*M0);
 		b2 = *M2/(*M2-m1);
 		a2 = 1/(m1-*M2);
-		i = *M0;
+		i = floor(*M0)+1;
 		while (i <= m1 && i<sizeframe){	
 			b[i] = a1*i+b1;	
 			i=i+1;
@@ -310,10 +286,10 @@ void functionBW (double * b , double kmin , int sizeframe , double kb , double *
 }
 
 
-double ** MatrixBW(int sizeframe , int k0 , double kmin , double * B_m0_m2){
+double ** MatrixBW(int sizeframe , double k0 , double kmin , double * B_m0_m2){
 	double ** BankBW;
 	int i;
-	int kb = k0;
+	double kb = k0;
 	double * M0 = calloc(1,sizeof(double));
 	double * M2 = calloc(1,sizeof(double));
 
@@ -331,15 +307,15 @@ double ** MatrixBW(int sizeframe , int k0 , double kmin , double * B_m0_m2){
 	for(i=0;i < BNMAX;i++){ // on fait l'allocation et le calcul des passe-bandes triangulaires en même temps
 		if(i>0){
 			BankBW[i] = BankBW[i-1] + sizeframe ;
-			kb=kb*4./3.;
+			kb = (double)kb*4./3.;
 			functionBW(BankBW[i] , kmin , sizeframe , kb , M0 , M2, RATIOBANDE);
-			B_m0_m2[2*i] = round(*M0);
-			B_m0_m2[2*i+1] = floor(*M2)+1;
+			B_m0_m2[2*i] = *M0;
+			B_m0_m2[2*i+1] = *M2;
 		}
 		else{
 			functionBW(BankBW[i] , kmin , sizeframe , kb , M0 , M2, RATIOBANDE);
-			B_m0_m2[0] = round(*M0);
-			B_m0_m2[1] = floor(*M2)+1;
+			B_m0_m2[0] = *M0;
+			B_m0_m2[1] = *M2;
 		}
 	}
 	
@@ -398,6 +374,11 @@ void Z_smoothing(double* z, int taille , int k , int kmin){		//  NON Testée
 	for(i=0;i<taille;i++){
 		z[i] = z[i]-zsmoothed[i];
 	}
+	free(zb);
+	free(b);
+	free(M0);
+	free(M2);
+	free(zsmoothed);
 }
 
 
@@ -512,7 +493,7 @@ void Lvector( frame Z , int sizeframe , int kmin , frame L ,double ** MatrixB , 
 	int m2;
 	int i,j;
 	int KB;
-	int k0 = b_m0_m2[0];
+	int k0 = round(b_m0_m2[0]);
 	frame zb = calloc(sizeframe,sizeof(double));
 	frame lb = calloc(sizeframe,sizeof(double));
 	zeros(sizeframe,L);
@@ -522,12 +503,14 @@ void Lvector( frame Z , int sizeframe , int kmin , frame L ,double ** MatrixB , 
 	}
 	for(i=0 ; i<BNMAX ; i++){
 		arraymultiplication( Z , MatrixB[i] , sizeframe , zb);
-		m0 = b_m0_m2[2*i];
-		m2 = b_m0_m2[2*i+1];
+		m0 = round(b_m0_m2[2*i]);
+		m2 = round(b_m0_m2[2*i+1]);
 		KB = m2 - m0 + 1;
 		lbvector( zb ,  sizeframe , KB , m0 , k0 ,  lb);
 		for(j=0;j<sizeframe;j++)L[j]=L[j] + lb[j];
 	}
+	free(zb);
+	free(lb);
 }
 	
 
@@ -548,7 +531,10 @@ int boucle(chord * tabchord , frame Z , int sizeframe , double SNR , int kmin , 
 	int itcheck;
 
 	L=calloc(sizeframe,sizeof(double));
-
+	if(!L){
+		puts("erreur allocation L boucle()");
+		return 0;
+	}
 	while(b>0){
 		Lvector(Z,sizeframe,kmin,L,MatrixB,b_m0_m2);
 		if(i!=0){
@@ -581,6 +567,7 @@ int boucle(chord * tabchord , frame Z , int sizeframe , double SNR , int kmin , 
 			else b = 0;
 		}
 	}
+	free(L);
 	return i-1;
 }		
 
@@ -646,18 +633,18 @@ void mainprocessing( Tnote  T , int sizeTmax , double * datain , int sizedatain 
 	int k = 0;
 	int i;
 	int b;
-	int k0 = (int)FMIN*sizeframe/samplerate;
-	int k1 = (int)FMAX*sizeframe/samplerate;
-	int kmin = (int)round((double)BMIN*sizeframe/samplerate);
+	double k0 = (double)FMIN*sizeframe/samplerate;
+	double k1 = (double)FMAX*sizeframe/samplerate;
+	double kmin = (double)BMIN*sizeframe/samplerate;
 	double thresv0;
 	double thresvi;
-	double * NotesBank=creer_notesBank( samplerate , sizeframe );
+	double * NotesBank = creer_notesBank( samplerate , sizeframe );
 	double * B_m0_m2 = calloc(BNMAX*2,sizeof(double));
 	double ** MatrixB = MatrixBW( sizeframe/2+1, k0 ,  kmin , B_m0_m2);
 	double time; // en secondes
 
 	frame x = fftw_malloc(sizeframe*sizeof(double)); // allocation spécifique à la librairie de fftw
-	puts("entrer les valeurs de Thresv0 et Thresvi");
+	puts("Entrer les valeurs de Thresv0 et Thresvi");
 	scanf("%lf",&thresv0);
 	scanf("%lf",&thresvi);
 	printf("Thresv0 : %lf\nThresvi : %lf\n",thresv0,thresvi);
@@ -684,7 +671,8 @@ void mainprocessing( Tnote  T , int sizeTmax , double * datain , int sizedatain 
 	}
 	free(B_m0_m2);
 	free(MatrixB);
-	free(x);
+	fftw_free(x);
+	free(NotesBank);
 }
 
 
