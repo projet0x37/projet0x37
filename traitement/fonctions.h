@@ -45,6 +45,8 @@ int boucle(chord * tabchord , frame Z , int sizeframe , double SNR , int kmin , 
 void Hamming( frame x , int sizeframe ); // OK
 int frameprocessing( chord * tabchord , frame x , int sizeframe , double samplerate, int kmin, int k0 , int k1 , double ** MatrixB, double * b_m0_m2 , double * NoteBank);
 double max_valueandposition_frame(frame X , int sizeframe , int * kmax); // OK
+int zerostabofchar( int l ,char* t); // ok
+notes * simplifT(Tnote T,int SIZE_T,double tmin); // ok
 void mainprocessing( Tnote  T , int sizeTmax , double * datain , int sizedatain  , double samplerate , int sizeframe);
 
 #endif /* fonctions_h */
