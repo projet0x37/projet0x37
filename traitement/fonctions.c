@@ -583,7 +583,15 @@ int boucle(chord * tabchord , frame Z , int sizeframe , double SNR , int kmin , 
 	}
 	return i-1;
 }		
-	
+
+
+void Hamming( frame x , int sizeframe ){
+	int i;
+	for(i=0;i<sizeframe;i++){
+		x[i] *= 0.53836 - 0.46164*cos(2*M_PI*i/(sizeframe-1));
+	}
+}
+
 
 int frameprocessing( chord * tabchord , frame x , int sizeframe , double samplerate, int kmin, int k0 , int k1 , double ** MatrixB, double * b_m0_m2 , double * NoteBank , double * thresv0 , double * thresvi){
 	frame N;
@@ -591,17 +599,21 @@ int frameprocessing( chord * tabchord , frame x , int sizeframe , double sampler
 	double SNR;
 	int b=0;
 	double *DSP;
-	DSP=calloc(sizeframe/2+1,sizeof(double));
+	DSP=calloc(sizeframe/2+1,sizeof(double)); // on alloue DSP ici pour le traité dans short_time
+	Hamming( x , sizeframe);
 	short_time_DSP( x , sizeframe , DSP);
+	// DSP est maintenant de taille sizeframe/2+1, on se débarasse de la symétrie du spectre
 	if(!DSP ){
 		printf("frameprocessing() DSP NULL\n");
 		return 0;
 	}
-	N = calloc(sizeframe/2+1, sizeof(double));
-	SNR = SNR_calc( DSP , N , sizeframe/2+1 , k0 , k1);
+	
+	N = calloc(sizeframe/2+1, sizeof(double)); // On prépare une frame N contenant la moyenne de Y=ln(1+X/g)
+	SNR = SNR_calc( DSP , N , sizeframe/2+1 , k0 , k1); // on calcul une seule fois le rapport signal sur bruit utilisé par la suite
+
 	Z  = noisesup( DSP , k0 , k1 , sizeframe/2+1 , (double)2./3. , N );
 
-	free(DSP); // une fois que le rapport signal sur bruit (SNR) est calculé, N et X sont inutiles
+	free(DSP); // une fois que le rapport signal sur bruit (SNR) est calculé et que X est traité , N et X sont inutiles
 	free(N);
 
 	b=boucle(tabchord,Z,sizeframe/2+1,SNR,kmin,*thresv0,*thresvi,k0,k1,MatrixB,b_m0_m2,NoteBank);
@@ -626,7 +638,6 @@ double max_valueandposition_frame(frame X , int sizeframe , int * kmax){
 	}
 	return M;
 }
-
 
 
 
@@ -671,6 +682,9 @@ void mainprocessing( Tnote  T , int sizeTmax , double * datain , int sizedatain 
 		}
 		j += sizeframe/2; // on avance d'une demie porte
 	}
+	free(B_m0_m2);
+	free(MatrixB);
+	free(x);
 }
 
 
