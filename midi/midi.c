@@ -81,7 +81,7 @@ FILE * miditrackdata( Tnote tab , int tailletab , char * trackdata ){
 	char t[1] = {0x00};
 	fwrite(t,sizeof(char),1,miditrackdata);
 	for(i=0;i<tailletab;i++){
-		if(i == tailletab-1 ){
+		if(i == tailletab-1 && tab[i].temps>0){
 			Li=tabtoliste(tab[i].tabchord);
 			noteon(Li,miditrackdata);
 			Li=concat(Li,Si);
@@ -89,26 +89,32 @@ FILE * miditrackdata( Tnote tab , int tailletab , char * trackdata ){
 			//freeliste(&Si); bug a corriger
 			noteoff(Li,Si,miditrackdata);
 			freeliste(&Li);
-		
 		}
 		else{
-			Li=tabtoliste( tab[i].tabchord );
-			noteon(Li,miditrackdata);
-			Li=concat(Li,Si);
-			Li=tri(&Li);
-			tau = tab[i+1].temps-tab[i].temps;
-			Si = split(&Li,tau);
-			if(Li){ // si Li est non NULL il y a des notes à éteindre
-				for( p=Li ; p->suiv ; p=p->suiv );
-				taudelay = tau - p->duree ; // a faire avant le noteoff ET le split
-				noteoff( Li , Si , miditrackdata ); // l'ajustement temporel des listes s'effectue dans note off et delay
-				delay( Si , taudelay , miditrackdata) ;
-				freeliste(&Li);
-			}
-			else{ // si Li est NULL il y a aucune note à éteindre , on comble le délai a l'aide de delay.
-				taudelay = tau;
-				delay(Si,taudelay,miditrackdata);
-				affiche(Si);
+			if( (tab[i].temps > 0 && i!=0) || i==0){
+				Li=tabtoliste( tab[i].tabchord );
+				noteon(Li,miditrackdata);
+				Li=concat(Li,Si);
+				Li=tri(&Li);
+				
+				if(tab[i+1].temps  <= 0 ){
+					printf("End i : %d \n",i);
+					tau=0;
+				}
+				else tau = tab[i+1].temps-tab[i].temps;
+				
+				Si = split(&Li,tau);
+				if(Li){ // si Li est non NULL il y a des notes à éteindre
+					for( p=Li ; p->suiv ; p=p->suiv );
+					taudelay = tau - p->duree ; // a faire avant le noteoff ET le split
+					noteoff( Li , Si , miditrackdata ); // l'ajustement temporel des listes s'effectue dans note off et delay
+					delay( Si , taudelay , miditrackdata) ;
+					freeliste(&Li);
+				}
+				else{ // si Li est NULL il y a aucune note à éteindre , on comble le délai a l'aide de delay.
+					taudelay = tau;
+					delay(Si,taudelay,miditrackdata);
+				}
 			}
 		}
 	}

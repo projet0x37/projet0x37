@@ -8,6 +8,7 @@
 typedef struct{
 	char note;
 	double duree;
+	int kech;
 	} chord;
 
 struct maillon {
