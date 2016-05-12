@@ -8,21 +8,6 @@
 #include "../textexport/textexport.h"
 #include "../midi/midi.h"
 
-
-
-#define F0 27.5000 // fréquence fondamentale utilisée pour calculer toutes le autres notes
-#define OFFSETMIDI 21 // décalage du numéro des notes pour correspondre à la notation midi 
-#define RATIOLISSAGE (double)1 // ratio pour le lissage
-#define RATIOBANDE (double)2/3 // ratio pour le calcul des bandes passantes triangulaires
-#define DELTAMIN 0.00001 // permet d'ajouter une condition pour la boucle() , si vi n'est pas assez modifié , la boucle est arrétée
-#define NBNOTES 128 // nombre de notes selon lesquelles des correspondances ( N°note <> fréquence ] s'effectuent
-#define BMIN 100 //largeur minimale des portes triangulaires
-#define FMIN 50 // fréquence minimale a partir de laquelle les traitements se font
-#define FMAX 6000 // fréquence maximale en dessous de laquelle les traitements s'opèrent
-#define BNMAX 17 // = floor(log(FMAX/FMIN)/log(4/3))+1 , ne pas oublier de l'ajuster si FMIN et FMAX sont modifiés
-
-
-
 extern double facteurmoyenne;
 extern double thresv0;
 extern double thresvi;
@@ -71,7 +56,7 @@ double incertitude ( double knotes ){ // OK
 }   
 
 
-char correspondancenote( double kech , double * notesBank){ // OK // les notes midi vont de 21 à 108 pour un piano ( 88 touches )
+char correspondancenote( int kech , double * notesBank){ // OK // les notes midi vont de 21 à 108 pour un piano ( 88 touches )
 	int j;
 	char note = 0;// valeur par défaut, si elle vaut -1 la correspondance note> fréquence n'a pas été concluante
 	for(j=0;j<NBNOTES;j++) {
@@ -97,7 +82,7 @@ double * Y_extraction(double * X, int taille, int k0 , int k1){ // OK
 	somme = (double)somme/(k1-k0+1);
 	g = pow(somme,3);
 
-	printf("g = %lf\n",g);
+	
 
 	Y = calloc(taille, sizeof(*Y));
 
@@ -157,7 +142,7 @@ frame noisesup( frame X , int k0 , int k1 , int sizeframe , double ratio, frame 
 }
 
 
-int processing_init( double Lmax , double SNR ){
+int processing_init( double Lmax , double SNR){
 	double v0=0;
 	v0=4*log(Lmax)+log(SNR);
 	if (v0>thresv0) return 1;
@@ -202,32 +187,35 @@ double * npow( double* meanx, int k1,int k0,int taille){
 	}
 	else{
 		for (i=k0;i<k1;i++){
-			g+=pow(meanx[i],(double)1/3);
+			g+=pow(meanx[i],(double)1./3.);
 		}
 		g=g/(k1-k0+1);
 		g=pow(g,3);
 		for(i=k0;i<k1;i++){
-			Npow[i]=exp(meanx[i]-1)*g;
+			Npow[i]=(exp(meanx[i])-1)*g;
 		}
 		return Npow;
 	}
 }
 
-double SNR_calc( frame X , frame N , int sizeframe, int k0, int k1 ){
-	frame Npow=npow(N,k1,k0,sizeframe);
+double SNR_calc( frame X , frame N , int sizeframe, double k0, double k1 ){
+	frame Npow;;
 	double sumx=0;
 	double sumNpow=0;
 	double SNR;
 	int i;
+	int i0=round(k0);
+	int i1=round(k1);
+	Npow = npow(N,i1,i0,sizeframe);
 	if(!X || !N || !Npow){
 		puts("erreur SNR_calc");
 		return -1;
 	}
-	
-	for(i=k0;i<k1;i++){
+	for( i=i0 ; i < i1 ; i++ ){
 		sumx+=X[i] ;
 		sumNpow+=Npow[i];
 	}
+	
 	free(Npow);
 	if(N>0){
 		SNR = sumx/sumNpow;
@@ -329,7 +317,7 @@ double ** MatrixBW(int sizeframe , double k0 , double kmin , double * B_m0_m2){ 
 }
 
 
-void Z_smoothing(double* z, int taille , int k , int kmin){		//  OK
+void Z_smoothing(double* z, int taille , int k , double kmin){		//  OK
 	double * zsmoothed = calloc(taille,sizeof(*zsmoothed));
 	int i = k;
 	double nfactor;		//facteur permettant de réhausser la moyenne pondérée (on suppose que les fondamentales sont détectées de manière croissante : il 						n'y à alors pas d'inconvénient à supprimer celle détectée).
@@ -393,14 +381,14 @@ void initTnote( Tnote T , int sizeTmax , int sizeframe , int samplerate){
 		return;
 	}
 	for(i=0;i<sizeTmax;i++){
-		T[i].temps=-1.0 ;
+		T[i].temps=0 ;
 		for(j=0;j<SIZE_TABCHORD;j++){
 			T[i].tabchord[j].note = (char)-1 ;
 			T[i].tabchord[j].duree = tmin ;
 			
 		}
 	}
-	printf("%d %d\n",i,j);
+	
 }
 
 
@@ -489,7 +477,7 @@ void lbvector(frame zb , int sizeframe , int KB , int kb , int U0 , double * Lb)
 }
 
 
-void Lvector( frame Z , int sizeframe , int kmin , frame L ,double ** MatrixB , double * b_m0_m2){
+void Lvector( frame Z , int sizeframe , frame L ,double ** MatrixB , double * b_m0_m2){
 	int m0;
 	int m2;
 	int i,j;
@@ -514,10 +502,10 @@ void Lvector( frame Z , int sizeframe , int kmin , frame L ,double ** MatrixB , 
 	
 
 
-int boucle(chord * tabchord , frame Z , int sizeframe , double SNR , int kmin , int k0 , int k1, double ** MatrixB , double * b_m0_m2 , double * NotesBank){
+int boucle(chord * tabchord , frame Z , int sizeframe , double SNR , double kmin , double ** MatrixB , double * b_m0_m2 , double * NotesBank){ // OK
 	int b=1;
 	frame L;
-	int i=0;
+	int i = 0;
 	int j;
 	int ksup;
 	int ksup0;
@@ -534,32 +522,39 @@ int boucle(chord * tabchord , frame Z , int sizeframe , double SNR , int kmin , 
 		puts("erreur allocation L boucle()");
 		return 0;
 	}
+	i=0;
+	b=1;
+	kmax=0;
 	while(b>0){
-		Lvector(Z,sizeframe,kmin,L,MatrixB,b_m0_m2);
-		if(i!=0){
+		Lvector(Z,sizeframe,L,MatrixB,b_m0_m2);
+		if(i!=0){ // En partant du principe que les fréquences fondamentales les plus basses sont les premières détectées avec cette méthode, on supprime du vecteur L les fondamentales des notes précédement trouvées
 			for(j=0;j<i;j++){
-				ksup = tabchord[j].note;
-				ksup0 = ceil(ksup-pow(ksup,(double)1/12)/2);
+				ksup = tabchord[j].kech;
+				
+				ksup0 = ceil(ksup-pow(ksup,(double)1/12)/2); // on s'autorise une largeur d'un quart de ton autour de la note , ~ 6 % de marge
 				ksup1 = floor(ksup + pow(ksup,(double)1/12)/2);
 				for(ks=ksup0;ks<=ksup1;ks++)L[ks]=0;
 			}
 		}
-		Lmax = max_valueandposition_frame(L,sizeframe, &kmax);
-		
-		if(i==1){
-			if(processing_init( Lmax , SNR) == 1){
-				tabchord[i].note = correspondancenote( kmax , NotesBank );
-				Z_smoothing( Z, sizeframe , kmax , kmin);
+		Lmax = max_valueandposition_frame(L,sizeframe, &kmax); // on calcul le maximum Lmax et sa position kmax dans L
+		if(i==0){
+			if(processing_init( Lmax , SNR) == 1){ // si Lmax est suffisament grand par rapport à v0 alors on stocke la note
+				tabchord[i].kech = kmax;
+				tabchord[i].note = correspondancenote( (int)kmax , NotesBank ); //stockage
+				Z_smoothing( Z, sizeframe , kmax , kmin); // on lisse le spectre pour supprimer la fréquence fondamentale détectée
+				
 				i++;
 			}
-			else b=0;
+			else b = 0;
 		}
 		else{
-			deltavi = vi;
-			itcheck = iteration_checking( Lmax , SNR , &vi);
+			deltavi = vi; // deltavi permet de quantifier la modification du vecteur L en conséquence du lissage de Z, si deltavi ne varie plus on suppose qu'il n'y a plus rien a détecter, cela evite de faire tourner la boucle pour rien
+			itcheck = iteration_checking( Lmax , SNR , &vi); // condition sur le seuil thresvi , à mesure qu'on supprime du spectre Z des informations, Lmax diminue , s'il est trop faible on ne stocke aucune information
 			deltavi = abs( deltavi - vi );
-			if( itcheck == 1 && i < 11 && deltavi > DELTAMIN ){ // on suppose qu'il est impossible de détecter plus de 10 notes , cela permet de limiter la boucle quoi qu'il arrive
+			if( itcheck == 1 && i < 11 && deltavi > DELTAMIN ){ // on suppose qu'il est impossible de détecter plus de 10 notes pour un clavier seul , cela permet de limiter la boucle quoi qu'il arrive				
+				tabchord[i].kech = kmax;
 				tabchord[i].note = correspondancenote( kmax , NotesBank );
+				
 				Z_smoothing( Z, sizeframe , kmax , kmin);
 				i++;
 			}
@@ -567,19 +562,19 @@ int boucle(chord * tabchord , frame Z , int sizeframe , double SNR , int kmin , 
 		}
 	}
 	free(L);
-	return i-1;
+	return i;
 }		
 
 
 void Hamming( frame x , int sizeframe ){
 	int i;
 	for(i=0;i<sizeframe;i++){
-		x[i] *= 0.53836 - 0.46164*cos(2*M_PI*i/(sizeframe-1));
+		x[i] *= 0.53836 - 0.46164*cos(2*M_PI*i/(sizeframe-1)); // on multiplie le signal par une porte de hamming
 	}
 }
 
 
-int frameprocessing( chord * tabchord , frame x , int sizeframe , double samplerate, int kmin, int k0 , int k1 , double ** MatrixB, double * b_m0_m2 , double * NoteBank ){
+int frameprocessing( chord * tabchord , frame x , int sizeframe , double samplerate, double kmin, double k0 , double k1 , double ** MatrixB, double * b_m0_m2 , double * NoteBank ){
 	frame N;
 	frame Z;
 	double SNR;
@@ -595,14 +590,15 @@ int frameprocessing( chord * tabchord , frame x , int sizeframe , double sampler
 	}
 	
 	N = calloc(sizeframe/2+1, sizeof(double)); // On prépare une frame N contenant la moyenne de Y=ln(1+X/g)
+	
+
+	Z  = noisesup( DSP , round(k0) , floor(k1)+1 , sizeframe/2+1 , (double)2./3. , N );
 	SNR = SNR_calc( DSP , N , sizeframe/2+1 , k0 , k1); // on calcul une seule fois le rapport signal sur bruit utilisé par la suite
 
-	Z  = noisesup( DSP , k0 , k1 , sizeframe/2+1 , (double)2./3. , N );
-
 	free(DSP); // une fois que le rapport signal sur bruit (SNR) est calculé et que X est traité , N et X sont inutiles
-	free(N);
+	
 
-	b=boucle(tabchord,Z,sizeframe/2+1,SNR,kmin,k0,k1,MatrixB,b_m0_m2,NoteBank);
+	b = boucle(tabchord,Z,sizeframe/2+1,SNR,kmin,MatrixB,b_m0_m2,NoteBank);
 	free(Z);
 	if(b>0) return 1; // 0 si rien n'a été modifié dans tabchord
 	else return 0; // 1 si on a au moins une note, en sachant que b représente le nombre de notes détectées
@@ -639,7 +635,7 @@ int zerostabofchar( int l ,char* t){
 }
 
 
-notes * simplifT(Tnote T,int SIZE_T,double tmin){		//Testée
+Tnote simplifT(Tnote T,int SIZE_T,double tmin){		//Testée
 	int i;
 	int j;
 	int k;
@@ -696,11 +692,12 @@ void mainprocessing( Tnote  T , int sizeTmax , double * datain , int sizedatain 
 	}
 	
 	initTnote( T , sizeTmax , sizeframe , samplerate );
+
 	while(j < sizedatain ){
-		for( i=0 ; i < sizeframe ; i++ ) x[i] = datain[i+j];
+		for( i=0 ; i < sizeframe  && i+j < sizedatain ; i++ ) x[i] = datain[i+j];
 		b = frameprocessing(T[k].tabchord ,  x , sizeframe ,  samplerate,  kmin,  k0 ,  k1 ,   MatrixB,   B_m0_m2 ,  NotesBank);
 		if( b == 1 ){ // au moins une note a été détectée donc on stocke le temps de détection et on incrémente k
-			time = (j+sizeframe/2)*samplerate/sizeframe; // le temps de détection correspond au centre de la porte
+			time = (double)(j+sizeframe/2)/samplerate; // le temps de détection correspond au centre de la porte
 			T[k].temps = time;
 			k++;
 		}
