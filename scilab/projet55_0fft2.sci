@@ -55,8 +55,8 @@ function[] = projet55_0fft(c,a,n,u,nb,meanfactor,v0,v1)
     
     //Affichage temporel du signal sans la fenétre de hamming, cela permet de voir si une note est jouée ou non
     figure(0)
-    subplot(2,1,1)
-    plot(t,y(1,:))
+//    subplot(2,1,1)
+//    plot(t,y(1,:))
     
     // Passage du signal par la fenêtre de Hamming
     y(1,:) = y(1,:).*w
@@ -70,19 +70,19 @@ function[] = projet55_0fft(c,a,n,u,nb,meanfactor,v0,v1)
     xfft = xfft(1:L) // limitation des abcisses à L
     
     //Affichage du spectre figure
-    subplot(2,1,2)      //affichage du spectre
+//    subplot(2,1,2)      //affichage du spectre
     plot(yb1)
 
         
     //Suppression du bruit et affichage sur figure 2
     figure(2)
-    subplot(2,1,1)
+//    subplot(2,1,1)
     [z,m,k0,k1]=noisesup(2/3,100,N,fs,yb1,50,6000,xfft,meanfactor)
-    
-
+//    
+//
     [tabnote,nbiteration]=boucle(z,yb1,m,100,nmax,N,fs,u,L,v0,v1,k0,k1,1)
-    disp(nbiteration)
-    disp(tabnote)
+//    disp(nbiteration)
+//    disp(tabnote)
 
     
     
@@ -375,7 +375,9 @@ function [T,nbiteration]=boucle(z,x,n,Bmin,nmax,N,fs,u,l,thresvo,thresvi,k0,k1,r
     for j=k0:k1
         Nv=Nv+Npow(j)
     end
-    
+    figure(15)
+    plot(Npow)
+    figure(16)
     SR=log(xv/Nv)
     li=0
     while b==1
