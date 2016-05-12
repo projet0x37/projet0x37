@@ -1,6 +1,6 @@
 CC=gcc
 CFLAGS= -c -g -Wall
-LFLAGS = -L audio/. audio/libsndfile.a -lm -lfftw3
+LFLAGS = -L audio/. audio/libsndfile.a -lm -L traitement/ traitement/libfftw3.a
 
 OBJECTS = audio/audioprocess.o main.o midi/listemidi.o midi/midi.o traitement/fonctions.o textexport/textexport.o
 

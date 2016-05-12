@@ -3,7 +3,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <time.h>
-#include <fftw3.h>
+#include "fftw3.h"
 #include "fonctions.h"
 #include "../textexport/textexport.h"
 #include "../midi/midi.h"

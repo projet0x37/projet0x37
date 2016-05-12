@@ -5,7 +5,7 @@
 #include "traitement/fonctions.h"
 #include "midi/midi.h"
 #include "textexport/textexport.h"
-#include <fftw3.h>
+#include "traitement/fftw3.h"
 #include <string.h>
 
 double facteurmoyenne = 1;
