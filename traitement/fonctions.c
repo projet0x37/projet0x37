@@ -635,7 +635,34 @@ int zerostabofchar( int l ,char* t){
 }
 
 
-Tnote simplifT(Tnote T,int SIZE_T,double tmin){		//Testée
+notes * simplifT(Tnote T, int SIZE_T){
+	int i;
+	int j;
+	int k;
+	int l;
+	for(i=1;i<=SIZE_T;i++){
+		j=SIZE_T-i;
+		for(k=0;k<SIZE_TABCHORD;k++){
+			if(T[j].tabchord[k].note<21 || T[j].tabchord[k].note >= 109){
+				T[j].tabchord[k].note=0;
+				T[j].tabchord[k].duree=0;
+			}
+			else{
+				for(l=0;l<SIZE_TABCHORD && l!=k;l++){
+					if(T[j].tabchord[k].note==T[j].tabchord[l].note){
+						T[j].tabchord[l].note=0;
+						T[j].tabchord[l].duree=0;
+					}
+				}
+			}
+		}
+	}
+	return(T);
+}
+
+
+
+notes * condT(Tnote T,int SIZE_T,double tmin){
 	int i;
 	int j;
 	int k;
@@ -652,7 +679,7 @@ Tnote simplifT(Tnote T,int SIZE_T,double tmin){		//Testée
 			}
 			for(k=0;k<SIZE_TABCHORD;k++){
 				for(l=0;l<SIZE_TABCHORD;l++){
-					if(tnote[l]==T[j-1].tabchord[k].note){
+					if(tnote[l]==T[j-1].tabchord[k].note && tnote[l]!=0){
 						T[j].tabchord[l].note = 0;
 						T[j-1].tabchord[k].duree += T[j].tabchord[k].duree;
 						T[j].tabchord[l].duree = 0;
