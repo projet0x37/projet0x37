@@ -93,7 +93,8 @@ int main(int argc, char** args){
 
 	//for(i=0;i<sizeTmax;i++) printf("temps : %lf\n",T[i].temps);
 	mainmidi("outputmidi",T,sizeTmax);
-	T=simplifT(T,sizeTmax,0.100);
+	T=simplifT(T,sizeTmax);
+	//T=condT(T,sizeTmax,0.101); // proto
 	mainmidi("outputmidisimplifie",T,sizeTmax);
 	return 0;
 }
