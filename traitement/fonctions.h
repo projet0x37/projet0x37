@@ -46,7 +46,8 @@ void Hamming( frame x , int sizeframe ); // OK
 int frameprocessing( chord * tabchord , frame x , int sizeframe , double samplerate, double kmin, double k0 , double k1 , double ** MatrixB, double * b_m0_m2 , double * NoteBank); // OK
 double max_valueandposition_frame(frame X , int sizeframe , int * kmax); // OK
 int zerostabofchar( int l ,char* t); // ok
-notes * simplifT(Tnote T,int SIZE_T,double tmin); // ok
+notes * simplifT(Tnote T, int SIZE_T);// ok
+notes * condT(Tnote T,int SIZE_T,double tmin);
 void mainprocessing( Tnote  T , int sizeTmax , double * datain , int sizedatain  , double samplerate , int sizeframe);
 
 #endif /* fonctions_h */
