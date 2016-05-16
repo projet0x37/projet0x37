@@ -103,7 +103,7 @@ int moving_average(double * Y, double ratio, int taille , frame movingA){ // OK
 		return 0;
 	}
 	else{
-		for(i=0;i<=taille;i++){
+		for(i=0;i<taille;i++){
 			if(i-ratio*i/2 < 0 || i+ratio*i/2 > taille){
 				movingA[i] = Y[i];
 			}
@@ -138,6 +138,7 @@ frame noisesup( frame X , int k0 , int k1 , int sizeframe , double ratio, frame 
 	Y = Y_extraction( X , sizeframe , k0 , k1);
 	moving_average( Y , ratio , sizeframe , N);
 	Z = Z_calc( Y , N , sizeframe );
+	free(Y);
 	return Z;
 }
 
@@ -312,7 +313,8 @@ double ** MatrixBW(int sizeframe , double k0 , double kmin , double * B_m0_m2){ 
 			B_m0_m2[1] = *M2;
 		}
 	}
-	
+	free(M0);
+	free(M2);
 	return BankBW;
 }
 
@@ -325,7 +327,7 @@ void Z_smoothing(double* z, int taille , int k , double kmin){		//  OK
 	double* M2 = calloc(1,sizeof(double));
 	double mz;
 	double mb;
-	double m;
+	double m = 0;
 	double min;
 	int j;
 	int j0;
@@ -367,6 +369,11 @@ void Z_smoothing(double* z, int taille , int k , double kmin){		//  OK
 	for(i=0;i<taille;i++){
 		z[i] = z[i]-zsmoothed[i];
 	}
+	free(zb);
+	free(b);
+	free(M0);
+	free(M2);
+	free(zsmoothed);
 }
 
 
@@ -496,8 +503,10 @@ void Lvector( frame Z , int sizeframe , frame L ,double ** MatrixB , double * b_
 		m2 = round(b_m0_m2[2*i+1]);
 		KB = m2 - m0 + 1;
 		lbvector( zb ,  sizeframe , KB , m0 , k0 ,  lb);
-		for(j=0;j<sizeframe;j++)L[j]=L[j] + lb[j];
+		for(j=0;j<sizeframe;j++)L[j]=L[j] + lb[j]*lb[j];
 	}
+	free(zb);
+	free(lb);
 }
 	
 
@@ -512,10 +521,10 @@ int boucle(chord * tabchord , frame Z , int sizeframe , double SNR , double kmin
 	int ksup1;
 	int ks;
 	int  kmax;
-	double Lmax;
-	double deltavi;
-	double vi;
-	int itcheck;
+	double Lmax = 0;
+	double deltavi = 0;
+	double vi = 0;
+	int itcheck = 1;
 
 	L=calloc(sizeframe,sizeof(double));
 	if(!L){
@@ -551,7 +560,7 @@ int boucle(chord * tabchord , frame Z , int sizeframe , double SNR , double kmin
 			deltavi = vi; // deltavi permet de quantifier la modification du vecteur L en conséquence du lissage de Z, si deltavi ne varie plus on suppose qu'il n'y a plus rien a détecter, cela evite de faire tourner la boucle pour rien
 			itcheck = iteration_checking( Lmax , SNR , &vi); // condition sur le seuil thresvi , à mesure qu'on supprime du spectre Z des informations, Lmax diminue , s'il est trop faible on ne stocke aucune information
 			deltavi = abs( deltavi - vi );
-			if( itcheck == 1 && i < 11 && deltavi > DELTAMIN ){ // on suppose qu'il est impossible de détecter plus de 10 notes pour un clavier seul , cela permet de limiter la boucle quoi qu'il arrive				
+			if( itcheck == 1 && i < 11 && deltavi > DELTAMIN ){ // on suppose qu'il est impossible de détecter plus de 10 notes , cela permet de limiter la boucle quoi qu'il arrive				
 				tabchord[i].kech = kmax;
 				tabchord[i].note = correspondancenote( kmax , NotesBank );
 				
@@ -577,7 +586,7 @@ void Hamming( frame x , int sizeframe ){
 int frameprocessing( chord * tabchord , frame x , int sizeframe , double samplerate, double kmin, double k0 , double k1 , double ** MatrixB, double * b_m0_m2 , double * NoteBank ){
 	frame N;
 	frame Z;
-	double SNR;
+	double SNR = 1;
 	int b=0;
 	double *DSP;
 	DSP=calloc(sizeframe/2+1,sizeof(double)); // on alloue DSP ici pour le traité dans short_time
@@ -594,9 +603,9 @@ int frameprocessing( chord * tabchord , frame x , int sizeframe , double sampler
 
 	Z  = noisesup( DSP , round(k0) , floor(k1)+1 , sizeframe/2+1 , (double)2./3. , N );
 	SNR = SNR_calc( DSP , N , sizeframe/2+1 , k0 , k1); // on calcul une seule fois le rapport signal sur bruit utilisé par la suite
-
+	free(N);
 	free(DSP); // une fois que le rapport signal sur bruit (SNR) est calculé et que X est traité , N et X sont inutiles
-	
+
 
 	b = boucle(tabchord,Z,sizeframe/2+1,SNR,kmin,MatrixB,b_m0_m2,NoteBank);
 	free(Z);
