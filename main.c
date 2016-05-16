@@ -11,6 +11,8 @@
 double facteurmoyenne = 1;
 double thresv0;
 double thresvi;
+FILE * logfile;
+int blog = 0;
 
 int main(int argc, char** args){
 	double * datain;
@@ -22,9 +24,6 @@ int main(int argc, char** args){
 	int b;
 	Tnote T;	
 	char s[255];
-	
-	
-
 
 	printf("Entrer le nom du fichier audio\n");
 	fgets(s,255,stdin);
@@ -83,6 +82,13 @@ int main(int argc, char** args){
 	puts("Entrer la valeur de Thresvi ( négative ou positive)");
 	scanf("%lf",&thresvi);
 	printf("Thresv0 : %lf\nThresvi : %lf\n",thresv0,thresvi);
+	
+	
+	puts("Avant de procéder au traitement, voulez vous récuperer un fichier log ?");
+	puts(" 1 : OUI    0 : NON");
+	scanf("%d",&blog);
+	
+	if(blog)logfile=fopen("log","w");
 
 	if( facteurmoyenne < 0 ) facteurmoyenne =1;
 	sizeTmax = 2*size/sizeframe + 2;
@@ -90,7 +96,7 @@ int main(int argc, char** args){
 	T=calloc(sizeTmax,sizeof(*T));
 
 	mainprocessing( T ,  sizeTmax , datain , size  , samplerate , sizeframe);
-
+	fclose(logfile);
 	//for(i=0;i<sizeTmax;i++) printf("temps : %lf\n",T[i].temps);
 	mainmidi("outputmidi",T,sizeTmax);
 	T=simplifT(T,sizeTmax);
