@@ -101,7 +101,7 @@ int main(int argc, char** args){
 	T=calloc(sizeTmax,sizeof(*T));
 
 	mainprocessing( T ,  sizeTmax , datain , size  , samplerate , sizeframe);
-	fclose(logfile);
+	if(blog)fclose(logfile);
 	//for(i=0;i<sizeTmax;i++) printf("temps : %lf\n",T[i].temps);
 	mainmidi("outputmidi",T,sizeTmax);
 	T=simplifT(T,sizeTmax);
