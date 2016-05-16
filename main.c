@@ -75,16 +75,18 @@ int main(int argc, char** args){
 
 	puts("Maintenant, il est nécessaire de choisir deux valeurs, Thresv0 et Thresvi, elles permettent de distinguer les notes 'fantômes' des notes réelles\n");
 	puts("Les notes sont d'autant plus filtrées que ces valeurs sont importantes, la condition de détection sur Thresv0 est prioritaire à celle sur Thresvi\n");
-	puts("On peut tout d'abord commencer par des valeurs négatives pour les deux, puis les augmenter jusqu'à obtenir une bonne partition");
+	puts("On peut tout d'abord commencer par des valeurs importantes pour les deux, puis les diminuer jusqu'à obtenir une bonne partition");
+	puts("Il peut être interessant de regarder le fichier log, afin d'avoir une idée des valeurs de thresv0 et thresvi");
+	puts("Mais en général thresv0 et thresvi sont respectivement aux alentours de 5 et 10");
 	puts("( Ces valeurs dépendent du facteur d'ajustement précédent)\n");
-	puts("Entrer la valeur de Thresv0 ( négative ou positive)");
+	puts("Entrer la valeur de Thresv0");
 	scanf("%lf",&thresv0);
-	puts("Entrer la valeur de Thresvi ( négative ou positive)");
+	puts("Entrer la valeur de Thresvi");
 	scanf("%lf",&thresvi);
 	printf("Thresv0 : %lf\nThresvi : %lf\n\n",thresv0,thresvi);
 	
 	
-	puts("Voulez vous récuperer un fichier log récapitulant le traitement du fichier ?");
+	puts("Voulez vous récupérer un fichier log récapitulant le traitement du fichier ?");
 	puts(" 1 : OUI    0 : NON");
 	scanf("%d",&blog);
 	
