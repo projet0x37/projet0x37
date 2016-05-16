@@ -81,14 +81,17 @@ int main(int argc, char** args){
 	scanf("%lf",&thresv0);
 	puts("Entrer la valeur de Thresvi ( négative ou positive)");
 	scanf("%lf",&thresvi);
-	printf("Thresv0 : %lf\nThresvi : %lf\n",thresv0,thresvi);
+	printf("Thresv0 : %lf\nThresvi : %lf\n\n",thresv0,thresvi);
 	
 	
-	puts("Avant de procéder au traitement, voulez vous récuperer un fichier log ?");
+	puts("Voulez vous récuperer un fichier log récapitulant le traitement du fichier ?");
 	puts(" 1 : OUI    0 : NON");
 	scanf("%d",&blog);
 	
-	if(blog)logfile=fopen("log","w");
+	if(blog){
+		logfile=fopen("log","w");
+		fprintf(logfile,"Log projet0x37.exe\nThresv0 : %lf\nThresvi : %lf\nVaration minimale de vi : %lf\nNombre d'itération maximale : %d\n",thresv0,thresvi,DELTAMIN,IMAX);
+	}
 
 	if( facteurmoyenne < 0 ) facteurmoyenne =1;
 	sizeTmax = 2*size/sizeframe + 2;

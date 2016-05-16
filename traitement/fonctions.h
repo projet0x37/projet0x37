@@ -18,6 +18,9 @@
 #define FMIN 50 // fréquence minimale a partir de laquelle les traitements se font
 #define FMAX 6000 // fréquence maximale en dessous de laquelle les traitements s'opèrent
 #define BNMAX 17 // = floor(log(FMAX/FMIN)/log(4/3))+1 , ne pas oublier de l'ajuster si FMIN et FMAX sont modifiés
+#define IMAX 11 // nombre d'itération maximale dans la boucle()
+
+
 
 typedef double * frame;
 int arraymultiplication( frame X, frame Y, int sizeframe , frame zb); // OK
