@@ -19,7 +19,8 @@
 #define FMAX 6000 // fréquence maximale en dessous de laquelle les traitements s'opèrent
 #define BNMAX 17 // = floor(log(FMAX/FMIN)/log(4/3))+1 , ne pas oublier de l'ajuster si FMIN et FMAX sont modifiés
 #define IMAX 11 // nombre d'itération maximale dans la boucle()
-
+#define THRESV0 5
+#define THRESVI 11
 
 
 typedef double * frame;
