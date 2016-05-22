@@ -98,7 +98,6 @@ FILE * miditrackdata( Tnote tab , int tailletab , char * trackdata ){
 				Li=tri(&Li);
 				
 				if(tab[i+1].temps  <= 0 ){
-					printf("End i : %d \n",i);
 					tau=0;
 				}
 				else tau = tab[i+1].temps-tab[i].temps;
@@ -129,7 +128,6 @@ FILE * endmiditrack( FILE * miditrackhead , FILE * miditrackdata , char * track 
 	fseek(miditrackhead,0,SEEK_END);
 	size=(int)tailletrack(miditrackdata);
 	size+=3; // on rajoute 3 octets pour la cloture du fichier par ff 2f 00
-	printf("size of track : %d\n",size);// test
 	swappedsize= ((size>>24)&0xff) | ((size<<8)&0xff0000) | ((size>>8)&0xff00) | ((size<<24)&0xff000000); // conversion big endian / little endian
 	fwrite(&swappedsize,sizeof(swappedsize),1,miditrackhead);
 	miditrack=mergeandclose(miditrackhead,miditrackdata,track);

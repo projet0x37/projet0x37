@@ -12,7 +12,9 @@ The library we use to process audio files (libsndfile) is avaible on https://git
 
 
 
-/* désentrelace un tableau contenant plusieurs canal, renvoit un tableau selon le canal choisit */
+/* désentrelace un tableau contenant plusieurs canal, renvoit un tableau selon le canal choisi */
+
+extern int userchannel ;
 double * channelread(int nbchannels, double *data ,int frames,int channel){
 	double * datachannel=NULL;
 	int i=0;
@@ -32,7 +34,6 @@ double * mainaudio(char * infilename,int * taille,double *samplerate){
 	SF_INFO sfinfo;
 	double * data = NULL;
 	double * datac = NULL;
-	int c;
 	if (! (infile = sf_open (infilename, SFM_READ, &sfinfo))){ /*condition if prise dans sfprocess.c dispo dans les exemples de la biblio sndfile, permet d'afficher proprement une erreur d'importation*/
 	   printf ("Not able to open input file %s.\n", infilename) ;
 	   puts (sf_strerror (NULL)) ;
@@ -44,9 +45,8 @@ double * mainaudio(char * infilename,int * taille,double *samplerate){
 	data=calloc( sfinfo.channels*sfinfo.frames , sizeof(*data) );
 	sf_read_double(infile , data, sfinfo.channels*sfinfo.frames) ; // stock les données infile dans le tableau data
 	sf_close( infile); 
-	printf("Quelle canal ? , choisir entre 0 et %d\n", (sfinfo.channels-1) );
-	scanf( "%d", &c );
-	datac = channelread( sfinfo.channels , data , sfinfo.frames , c);
+	if(userchannel < 0 || userchannel >= sfinfo.channels ) userchannel = 0;
+	datac = channelread( sfinfo.channels , data , sfinfo.frames , userchannel);
 	free(data);
 	*taille= sfinfo.frames;
 	*samplerate = sfinfo.samplerate;

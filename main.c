@@ -16,33 +16,53 @@ double thresv0 = THRESV0;
 double thresvi = THRESVI;
 FILE * logfile;
 int blog = 0;
+int userchannel = 0;
+
+
+void disphelp(void){
+	printf("\nAide Projet0x37\nUsage : ./projet0x37 [options] [fichier]\n\nProjet0x37 fourni la partition MIDI d'un fichier audio .wav .\n\nPour plus d'informations : projet0x37.wordpress.com  ou  github.com/projet0x37 .\n\n");
+	printf("Description des options :\n\n");
+	printf("  -c X			choisit le canal X du fichier audio.\n");
+	printf("			     Exemple pour un stéréo : X = 0 pour le canal de gauche, X = 2 pour le canal de droite.\n");
+	printf("			     X prend des valeurs entre 0 et ( nombre de canal - 1 )\n\n");
+	printf("  -f fichier  		spécifie le nom du fichier .wav à traiter, sans cette option le programme traite automatiquement le fichier intitulé input.wav dans le répertoire d'exécution.\n\n");
+	printf("  -h			affiche cette aide.\n\n");
+	printf("  -l			fourni un fichier log récapitulant le traitement du fichier.\n\n");
+	printf("  -m FA			avec cette option, la moyenne glissante calculée lors du traitement du bruit est multipliée par FA\n");
+	printf("			     cela permet parfois d'améliorer les partitions obtenues, ce facteur est fixé à 1 par défaut\n");
+	printf("			     plus il est important et plus le spectre est filtré et inversement, on le modifie aux alentours de 1 et il doit être positif.\n\n");
+	printf("  -o thresv0		modifie la valeur de thresv0, elle est de 5 par défaut. Il est conseillé d'utiliser cette option pour obtenir la meilleur partition possible\n");
+	printf("			     elle conditionne la détection de la première note à un instant donné et est prioritaire sur la détection des notes suivantes ( voir -w )\n");
+	printf("			     si elle est trop importante le logiciel détectera moins de notes, si elle est trop faible il détectera des notes 'fantomes'\n\n");
+	printf("  -p thresvI		modifie la valeur de thresvi, elle est de 11 par défaut. Il est conseillé d'utiliser cette option pour obtenir la meilleur partition possible\n");
+	printf("			     elle permet de modifier la sensibilité du programme à la polyphonie de l'enregistrement\n");
+	printf("			     cette valeur est inversement proportionnelle au nombre de notes détectées à un instant donné ( en excluant la première note, voir -v).\n\n");
+}
 
 int main(int argc, char** argv){
-	double * datain;
+	double * datain=NULL;
 	int  size;
 	double duration;
 	double samplerate;
-	int sizeframe = 8192 ;
+	int sizeframe = 4096 ;
 	int sizeTmax;
-	int b;
+	int b = 3;
 	int c;
+	char *filename=NULL;
 	Tnote T;	
-	//char s[255];
-	//int index;
 	
 	opterr = 0;
-
-	if(argc == 0){
-		fprintf(stderr,"Le programme nécessite un nom de fichier audio appelé avec -f");
-	}
 	
-	while((c=getopt(argc,argv,"v:w:m:f:lh")) != -1){
+	while((c=getopt(argc,argv,"c:v:w:m:f:lh")) != -1){
 		switch (c)
 		{
-			case 'v' :
+			case 'o' :
 				thresv0 = (double)atof(optarg);
 				break;
-			case 'w' :
+			case 'c' :
+				userchannel = (int)atof(optarg);
+				break;
+			case 'p' :
 				thresvi = (double)atof(optarg);
 				break;
 			case 'm' : 
@@ -54,39 +74,43 @@ int main(int argc, char** argv){
 			case 't' :
 				b = (int)atof(optarg);
 			case 'h' :
+				disphelp();
+				return 0;
 				break;
 			case 'f' :
-				datain=mainaudio(optarg,&size,&samplerate);
+				filename=calloc(100,sizeof(char));
+				strcpy(filename,optarg);
+				//printf("Importation du fichier audio %s ...\n",optarg);
+				//datain=mainaudio(optarg,&size,&samplerate);
 				break;
 			case '?' :
-				if(optopt == 'v' || optopt == 'w' || optopt == 'm') fprintf (stderr, "Option -%c nécessite un argument.\n", optopt);
+				if(optopt == 'o' || optopt == 'p' || optopt == 'm') fprintf (stderr, "Option -%c nécessite un argument.\n", optopt);
 				else if ( isprint(optopt) ) fprintf (stderr, "Option inconnue `-%c.\n", optopt);
 				else fprintf(stderr,"Caractère d'option inconnue`\\x%x'.\n",optopt);
 				return 1;
 			default:
+				
 				abort();
 		}
 	}
-	/*	
-	printf("Entrer le nom du fichier audio\n");
-	fgets(s,255,stdin);
-	s[strcspn(s, "\r\n")] = 0;	
-	printf("Importation du fichier audio ...\n");
-	*/
+
+	if(!datain){
+		if(!filename){
+			printf("Importation du fichier audio input.wav ...\n");
+			datain=mainaudio("input.wav",&size,&samplerate);
+		}
+		else {
+			printf("Importation du fichier audio %s ...\n",filename);
+			datain=mainaudio(filename,&size,&samplerate);
+		}
+	}
 	
-	//datain=mainaudio(s,&size,&samplerate);
-	if(!datain) return 0;
+	if(!datain){
+		disphelp();		
+		return 0;
+	}
+	
 	duration=(double)size/samplerate;
-	/*
-	printf("Le fichier audio dure %lf s , il comporte %d éléments, la fréquence d'échantillonage est de %lf\n",duration,size,samplerate);
-	puts("Traitement du fichier :");
-	printf("Quelle taille de porte voulez vous choisir ?\n\n");
-	printf(" 1 : 2**11 soit %lf s\n",(double)2048/samplerate);
-	printf(" 2 : 2**12 soit %lf s\n",(double)4096/samplerate);
-	printf(" 3 : 2**13 soit %lf s\n",(double)8192/samplerate);
-	printf(" 4 : 2**14 soit %lf s\n",(double)16384/samplerate);
-	scanf("%d",&b);
-	*/
 	switch (b)
 	{
 	case 1 : 
@@ -105,53 +129,28 @@ int main(int argc, char** argv){
 		sizeframe = 4096;
 		break;
 	}
-	/*
 
-	printf("Vous avez choisi une largeur de %lf s .\n", (double)sizeframe/samplerate);
-	printf("La résolution temporelle de la partition est de %lf s\n",(double)sizeframe/(2*samplerate));
-
-	printf("Lors du traitement une moyenne courante est calculée sur le spectre de Fourier\n");
-	printf("On peut être amené à ajuster légéremment cette moyenne afin d'obtenir une meilleur partition\n");
-	printf("Facteur d'ajustement ?\n( valeure positive, 1 par défaut )\n");
-	scanf("%lf",&facteurmoyenne);
-	printf("Facteur d'ajustement : %lf\n\n\n",facteurmoyenne);
-
-	
-	puts("Maintenant, il est nécessaire de choisir deux valeurs, Thresv0 et Thresvi, elles permettent de distinguer les notes 'fantômes' des notes réelles\n");
-	puts("Les notes sont d'autant plus filtrées que ces valeurs sont importantes, la condition de détection sur Thresv0 est prioritaire à celle sur Thresvi\n");
-	puts("On peut tout d'abord commencer par des valeurs importantes pour les deux, puis les diminuer jusqu'à obtenir une bonne partition");
-	puts("Il peut être interessant de regarder le fichier log, afin d'avoir une idée des valeurs de thresv0 et thresvi");
-	puts("Mais en général thresv0 et thresvi sont respectivement aux alentours de 5 et 10");
-	puts("( Ces valeurs dépendent du facteur d'ajustement précédent)\n");
-	puts("Entrer la valeur de Thresv0");
-	scanf("%lf",&thresv0);
-	puts("Entrer la valeur de Thresvi");
-	scanf("%lf",&thresvi);
-	printf("Thresv0 : %lf\nThresvi : %lf\n\n",thresv0,thresvi);
-	
-	
-	puts("Voulez vous récupérer un fichier log récapitulant le traitement du fichier ?");
-	puts(" 1 : OUI    0 : NON");
-	scanf("%d",&blog);
-	*/
 	
 	if(blog){
-		logfile=fopen("log","w");
-		fprintf(logfile,"Log projet0x37.exe\nFréquence d'échantillonnage : %lf  Largeur : %lf\n DuréeThresv0 : %lf\nThresvi : %lf\nVaration minimale de vi : %lf\nNombre d'itération maximale : %d\n",samplerate,duration,thresv0,thresvi,DELTAMIN,IMAX);
+		logfile=fopen("logprojet0x37","w");
+		fprintf(logfile,"Log projet0x37.exe\nFréquence d'échantillonnage : %lf Canal : %d Durée : %lf\nLargeur des portes : %lf Résolution : %lf\nThresv0 : %lf Thresvi : %lf\nVaration minimale de vi : %lf Nombre d'itération maximale : %d\n",samplerate,userchannel,duration,sizeframe/samplerate,sizeframe/(2*samplerate),thresv0,thresvi,DELTAMIN,IMAX);
 	}
 
 	if( facteurmoyenne < 0 ) facteurmoyenne =1;
 	sizeTmax = 2*size/sizeframe + 2;
 
 	T=calloc(sizeTmax,sizeof(*T));
-
+	printf("Traitement du fichier... \n");
 	mainprocessing( T ,  sizeTmax , datain , size  , samplerate , sizeframe);
 	if(blog)fclose(logfile);
-	//for(i=0;i<sizeTmax;i++) printf("temps : %lf\n",T[i].temps);
-	mainmidi("outputmidi",T,sizeTmax);
+
+	//mainmidi("outputmidi.mid",T,sizeTmax);
 	T=simplifT(T,sizeTmax);
-	//T=condT(T,sizeTmax,0.101); // proto
-	mainmidi("outputmidisimplifie",T,sizeTmax);
+	//T=condT(T,sizeTmax,0.101); prototype
+	printf("Création du fichier midi outputmidi.mid ...\n");
+	mainmidi("outputmidi.mid",T,sizeTmax);
+	printf("Succés ! \n");
+	if(blog) printf("Les informations relatives au traitement du fichier sont disponibles dans logprojet0x37\n");
 	return 0;
 }
 
