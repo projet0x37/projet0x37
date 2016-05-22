@@ -37,6 +37,8 @@ void disphelp(void){
 	printf("  -p thresvI		modifie la valeur de thresvi, elle est de 11 par défaut. Il est conseillé d'utiliser cette option pour obtenir la meilleur partition possible\n");
 	printf("			     elle permet de modifier la sensibilité du programme à la polyphonie de l'enregistrement\n");
 	printf("			     cette valeur est inversement proportionnelle au nombre de notes détectées à un instant donné ( en excluant la première note, voir -v).\n\n");
+	printf("  -t N			modifie la taille de la porte utilisée pour le traitement, N prend des valeurs entre 1 et 4 inclus.\n");
+	printf("			     1 : 2048    2 : 4096    3 : 8192    4 : 16384    Par défaut N = 3\n\n");
 }
 
 int main(int argc, char** argv){
@@ -53,7 +55,7 @@ int main(int argc, char** argv){
 	
 	opterr = 0;
 	
-	while((c=getopt(argc,argv,"c:v:w:m:f:lh")) != -1){
+	while((c=getopt(argc,argv,"c:v:t:w:m:f:lh")) != -1){
 		switch (c)
 		{
 			case 'o' :
@@ -73,6 +75,7 @@ int main(int argc, char** argv){
 				break;
 			case 't' :
 				b = (int)atof(optarg);
+				break;
 			case 'h' :
 				disphelp();
 				return 0;
@@ -132,7 +135,7 @@ int main(int argc, char** argv){
 
 	
 	if(blog){
-		logfile=fopen("logprojet0x37","w");
+		logfile=fopen("log-projet0x37","w");
 		fprintf(logfile,"Log projet0x37.exe\nFréquence d'échantillonnage : %lf Canal : %d Durée : %lf\nLargeur des portes : %lf Résolution : %lf\nThresv0 : %lf Thresvi : %lf\nVaration minimale de vi : %lf Nombre d'itération maximale : %d\n",samplerate,userchannel,duration,sizeframe/samplerate,sizeframe/(2*samplerate),thresv0,thresvi,DELTAMIN,IMAX);
 	}
 
@@ -150,7 +153,7 @@ int main(int argc, char** argv){
 	printf("Création du fichier midi outputmidi.mid ...\n");
 	mainmidi("outputmidi.mid",T,sizeTmax);
 	printf("Succés ! \n");
-	if(blog) printf("Les informations relatives au traitement du fichier sont disponibles dans logprojet0x37\n");
+	if(blog) printf("Les informations relatives au traitement du fichier sont disponibles dans log-projet0x37\n");
 	return 0;
 }
 
