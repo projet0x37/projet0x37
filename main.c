@@ -17,6 +17,7 @@ double thresvi = THRESVI;
 FILE * logfile;
 int blog = 0;
 int userchannel = 0;
+int divnoire = 240;
 
 
 void disphelp(void){
@@ -39,6 +40,7 @@ void disphelp(void){
 	printf("			     cette valeur est inversement proportionnelle au nombre de notes détectées à un instant donné ( en excluant la première note, voir -v).\n\n");
 	printf("  -t N			modifie la taille de la porte utilisée pour le traitement, N prend des valeurs entre 1 et 4 inclus.\n");
 	printf("			     1 : 2048    2 : 4096    3 : 8192    4 : 16384    Par défaut N = 3\n\n");
+	printf("  -D division		modifie la valeur de la division de la noire");
 }
 
 int main(int argc, char** argv){
@@ -51,11 +53,13 @@ int main(int argc, char** argv){
 	int b = 3;
 	int c;
 	char *filename=NULL;
+	char *logfilename=NULL;
+	char * midiname =NULL;
 	Tnote T;	
 	
 	opterr = 0;
 	
-	while((c=getopt(argc,argv,"c:v:t:w:m:f:lh")) != -1){
+	while((c=getopt(argc,argv,"D:c:o:t:p:m:f:lh")) != -1){
 		switch (c)
 		{
 			case 'o' :
@@ -76,6 +80,9 @@ int main(int argc, char** argv){
 			case 't' :
 				b = (int)atof(optarg);
 				break;
+			case 'D' :
+				divnoire = (int)atof(optarg);
+				break;
 			case 'h' :
 				disphelp();
 				return 0;
@@ -87,7 +94,7 @@ int main(int argc, char** argv){
 				//datain=mainaudio(optarg,&size,&samplerate);
 				break;
 			case '?' :
-				if(optopt == 'o' || optopt == 'p' || optopt == 'm') fprintf (stderr, "Option -%c nécessite un argument.\n", optopt);
+				if(optopt == 'o' || optopt == 'p' || optopt == 'm' || optopt == 't' || optopt =='D' || optopt =='c' || optopt =='f') fprintf (stderr, "Option -%c nécessite un argument.\n", optopt);
 				else if ( isprint(optopt) ) fprintf (stderr, "Option inconnue `-%c.\n", optopt);
 				else fprintf(stderr,"Caractère d'option inconnue`\\x%x'.\n",optopt);
 				return 1;
@@ -135,7 +142,12 @@ int main(int argc, char** argv){
 
 	
 	if(blog){
-		logfile=fopen("log-projet0x37","w");
+		if(!filename)logfile=fopen("log-projet0x37-input.wav","w");
+		else{
+			logfilename=calloc(100,sizeof(char));
+			sprintf(logfilename,"log-projet0x37-%s",filename);
+			logfile=fopen(logfilename,"w");
+		}
 		fprintf(logfile,"Log projet0x37.exe\nFréquence d'échantillonnage : %lf Canal : %d Durée : %lf\nLargeur des portes : %lf Résolution : %lf\nThresv0 : %lf Thresvi : %lf\nVaration minimale de vi : %lf Nombre d'itération maximale : %d\n",samplerate,userchannel,duration,sizeframe/samplerate,sizeframe/(2*samplerate),thresv0,thresvi,DELTAMIN,IMAX);
 	}
 
@@ -150,10 +162,21 @@ int main(int argc, char** argv){
 	//mainmidi("outputmidi.mid",T,sizeTmax);
 	T=simplifT(T,sizeTmax);
 	//T=condT(T,sizeTmax,0.101); prototype
-	printf("Création du fichier midi outputmidi.mid ...\n");
-	mainmidi("outputmidi.mid",T,sizeTmax);
+	if(!filename){
+		printf("Création du fichier midi outputmidi-input.wav.mid ...\n");
+		mainmidi("outputmidi-input.wav.mid",T,sizeTmax);
+	}
+	else{
+		midiname=calloc(100,sizeof(char));
+		sprintf(midiname,"outputmidi-%s.mid",filename);
+		printf("Création du fichier midi %s ...\n",midiname);
+		mainmidi(midiname,T,sizeTmax);
+	}
 	printf("Succés ! \n");
-	if(blog) printf("Les informations relatives au traitement du fichier sont disponibles dans log-projet0x37\n");
+	if(blog){
+		if(!filename)printf("Les informations relatives au traitement du fichier sont disponibles dans log-projet0x37-input.wav\n");
+		else printf("Les informations relatives au traitement du fichier sont disponibles dans %s\n",logfilename);
+	}
 	return 0;
 }
 

@@ -4,7 +4,7 @@
 #include "midi.h"
 #include <math.h>
 
-#define D 240 // division de la noire 240 >> 1 seconde
+extern int divnoire; // division de la noire 240 >> 1 seconde
 
 void affiche(liste L){ // pour tester dans le programme
 	liste p;
@@ -233,7 +233,7 @@ bufferc convert_128( double tau ){ // a revoir on doit ajouter 128 a tout les oc
 	bufferc buf=NULL;
 	int R;
 	int Q = 1;
-	double N = floor(tau*D);
+	double N = floor(tau*divnoire);
 	int p = 1;
 	while(Q != 0){
 		R = (int)N%128;

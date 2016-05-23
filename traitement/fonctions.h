@@ -20,7 +20,7 @@
 #define BNMAX 17 // = floor(log(FMAX/FMIN)/log(4/3))+1 , ne pas oublier de l'ajuster si FMIN et FMAX sont modifiés
 #define IMAX 11 // nombre d'itération maximale dans la boucle()
 #define THRESV0 5
-#define THRESVI 11
+#define THRESVI 6
 
 
 typedef double * frame;
