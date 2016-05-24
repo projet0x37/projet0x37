@@ -1,13 +1,13 @@
 # projet0x37
 Logiciel de transcription musicale, Phelma, Grenoble.
-Ce logiciel a été créé par 5 étudiants d'école d'ingénieur Phelma :
-  Noé Paul-Gauthier
-  Adam Antoine
-  Destouet Gabriel
-  Boscher Flore
+Ce logiciel a été créé par 5 étudiants de l'école d'ingénieur Phelma :
+  Noé Paul-Gauthier, 
+  Adam Antoine, 
+  Destouet Gabriel, 
+  Boscher Flore, 
   Maladière Vincent
 
-Ce logiciel transcrit un enregistrement audio .wav en fichier midi .mid
+Ce logiciel transcrit un enregistrement audio .wav en fichier midi .mid. 
 Il est utilisable dans un environnement linux
 
 Pour utiliser notre logiciel : 
