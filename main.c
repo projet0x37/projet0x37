@@ -15,7 +15,7 @@ double facteurmoyenne = 1;
 double thresv0 = THRESV0;
 double thresvi = THRESVI;
 FILE * logfile;
-int blog = 0;
+int boollog = 0;
 int userchannel = 0;
 int divnoire = 240;
 
@@ -55,8 +55,9 @@ int main(int argc, char** argv){
 	char *filename=NULL;
 	char *logfilename=NULL;
 	char * midiname =NULL;
-	Tnote T;	
-	
+	Tnote T;
+	userchannel = 0;
+	divnoire = 240;
 	opterr = 0;
 	
 	while((c=getopt(argc,argv,"D:c:o:t:p:m:f:lh")) != -1){
@@ -75,7 +76,7 @@ int main(int argc, char** argv){
 				facteurmoyenne = (double)atof(optarg);
 				break;
 			case 'l' :
-				blog = 1;
+				boollog = 1;
 				break;
 			case 't' :
 				b = (int)atof(optarg);
@@ -99,7 +100,7 @@ int main(int argc, char** argv){
 				else fprintf(stderr,"Caractère d'option inconnue`\\x%x'.\n",optopt);
 				return 1;
 			default:
-				
+				boollog=0;
 				abort();
 		}
 	}
@@ -141,7 +142,7 @@ int main(int argc, char** argv){
 	}
 
 	
-	if(blog){
+	if(boollog){
 		if(!filename)logfile=fopen("log-projet0x37-input.wav","w");
 		else{
 			logfilename=calloc(100,sizeof(char));
@@ -157,7 +158,7 @@ int main(int argc, char** argv){
 	T=calloc(sizeTmax,sizeof(*T));
 	printf("Traitement du fichier... \n");
 	mainprocessing( T ,  sizeTmax , datain , size  , samplerate , sizeframe);
-	if(blog)fclose(logfile);
+	if(boollog)fclose(logfile);
 
 	//mainmidi("outputmidi.mid",T,sizeTmax);
 	T=simplifT(T,sizeTmax);
@@ -173,7 +174,7 @@ int main(int argc, char** argv){
 		mainmidi(midiname,T,sizeTmax);
 	}
 	printf("Succès ! \n");
-	if(blog){
+	if(boollog){
 		if(!filename)printf("Les informations relatives au traitement du fichier sont disponibles dans log-projet0x37-input.wav\n");
 		else printf("Les informations relatives au traitement du fichier sont disponibles dans %s\n",logfilename);
 	}

@@ -12,7 +12,7 @@ extern double facteurmoyenne;
 extern double thresv0;
 extern double thresvi;
 extern FILE * logfile;
-extern size_t blog;
+extern int boollog;
 
 int arraymultiplication( frame X, frame Y, int sizeframe , frame zb){ //OK
 	int i;
@@ -148,13 +148,13 @@ int processing_init( double Lmax , double SNR){
 	double v0=0;
 	v0=4*log(Lmax)+log(SNR);
 	if (v0>thresv0){
-		if(blog){
+		if(boollog){
 			fprintf(logfile,"	v0 = %lf : oui\n",v0);
 		}
 		return 1;
 	}
 	if (v0<=thresv0){
-		if(blog){
+		if(boollog){
 			fprintf(logfile,"	v0 = %lf : non\n",v0);
 		}
 		return 0;
@@ -166,13 +166,13 @@ int processing_init( double Lmax , double SNR){
 int iteration_checking( double Lmaxi , double SNR ,double * vi){
 	*vi=1.8*log(Lmaxi)-log(SNR);
 	if (*vi>thresvi){
-		if(blog){
+		if(boollog){
 			fprintf(logfile,"	vi = %lf : oui\n",*vi);
 		}
 		return 1;
 	}
 	if (*vi<=thresvi){
-		if(blog){
+		if(boollog){
 			fprintf(logfile,"	vi = %lf : non\n",*vi);
 		}
 		return 0;
@@ -571,13 +571,13 @@ int boucle(chord * tabchord , frame Z , int sizeframe , double SNR , double kmin
 			if(processing_init( Lmax , SNR) == 1){ // si Lmax est suffisament grand par rapport à v0 alors on stocke la note
 				tabchord[i].kech = kmax;
 				tabchord[i].note = correspondancenote( (int)kmax , NotesBank ); //stockage
-				if(blog)fprintf(logfile,"		note : %d\n",tabchord[i].note);
+				if(boollog)fprintf(logfile,"		note : %d\n",tabchord[i].note);
 				Z_smoothing( Z, sizeframe , kmax , kmin); // on lisse le spectre pour supprimer la fréquence fondamentale détectée
 				
 				i++;
 			}
 			else{
-				if(blog)fprintf(logfile,"		(note : %d)\n",correspondancenote( (int)kmax , NotesBank ));
+				if(boollog)fprintf(logfile,"		(note : %d)\n",correspondancenote( (int)kmax , NotesBank ));
 				b = 0;
 			}
 		}
@@ -588,12 +588,12 @@ int boucle(chord * tabchord , frame Z , int sizeframe , double SNR , double kmin
 			if( itcheck == 1 && i < IMAX && deltavi > DELTAMIN ){ // on suppose qu'il est impossible de détecter plus de 10 notes , cela permet de limiter la boucle quoi qu'il arrive				
 				tabchord[i].kech = kmax;
 				tabchord[i].note = correspondancenote( kmax , NotesBank );
-				if(blog)fprintf(logfile,"		note : %d\n",tabchord[i].note);
+				if(boollog)fprintf(logfile,"		note : %d\n",tabchord[i].note);
 				Z_smoothing( Z, sizeframe , kmax , kmin);
 				i++;
 			}
 			else{
-				if(blog)fprintf(logfile,"		(note : %d),deltavi : %lf\n",correspondancenote( (int)kmax , NotesBank ),deltavi);
+				if(boollog)fprintf(logfile,"		(note : %d),deltavi : %lf\n",correspondancenote( (int)kmax , NotesBank ),deltavi);
 				b = 0;
 			}
 		}
@@ -764,7 +764,7 @@ void mainprocessing( Tnote  T , int sizeTmax , double * datain , int sizedatain 
 
 	while(j < sizedatain ){
 		for( i=0 ; i < sizeframe  && i+j < sizedatain ; i++ ) x[i] = datain[i+j];
-		if(blog){
+		if(boollog){
 			time = (double)(j+sizeframe/2)/samplerate;
 			fprintf(logfile,"t : %lf \n",time);
 		}
