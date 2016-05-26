@@ -88,7 +88,7 @@ int main(int argc, char** argv){
 				return 0;
 				break;
 			case 'f' :
-				filename=calloc(100,sizeof(char));
+				filename=calloc(strlen(optarg)+1,sizeof(char));
 				strcpy(filename,optarg);
 				//printf("Importation du fichier audio %s ...\n",optarg);
 				//datain=mainaudio(optarg,&size,&samplerate);
@@ -172,7 +172,7 @@ int main(int argc, char** argv){
 		printf("Création du fichier midi %s ...\n",midiname);
 		mainmidi(midiname,T,sizeTmax);
 	}
-	printf("Succés ! \n");
+	printf("Succès ! \n");
 	if(blog){
 		if(!filename)printf("Les informations relatives au traitement du fichier sont disponibles dans log-projet0x37-input.wav\n");
 		else printf("Les informations relatives au traitement du fichier sont disponibles dans %s\n",logfilename);
