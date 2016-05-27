@@ -98,7 +98,7 @@ FILE * miditrackdata( Tnote tab , int tailletab , char * trackdata ){
 				Li=tri(&Li);
 				
 				if(tab[i+1].temps  <= 0 ){
-					tau=0;
+					tau=0.99;
 				}
 				else tau = tab[i+1].temps-tab[i].temps;
 				
