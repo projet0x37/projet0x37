@@ -17,7 +17,7 @@ double thresvi = THRESVI;
 FILE * logfile;
 int boollog = 0;
 int userchannel = 0;
-int divnoire = 240;
+int16_t divnoire = 240;
 
 
 void disphelp(void){
