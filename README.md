@@ -25,4 +25,4 @@ Cependant nous vous conseillons d'afficher l'aide avec ./projet0x37.exe -h
 Différentes options vous sont proposées pour améliorer la qualité de la transcription en fichier midi
 
 
-Vous pouvez créer une parition à partir de différents logiciels comme Lilypond , Musescore ou encore Musicsheet
+A partir du fichier MIDI , vous pouvez créer une parition à partir de différents logiciels comme Lilypond , Musescore ou encore Musicsheet
