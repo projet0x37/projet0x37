@@ -4,7 +4,7 @@
 #include "midi.h"
 #include <math.h>
 
-extern int16_t divnoire; // division de la noire 240 >> 1 seconde
+extern int divnoire; // division de la noire 240 >> 1 seconde
 
 void affiche(liste L){ // pour tester dans le programme
 	liste p;
@@ -39,13 +39,10 @@ Important: rajouter des vérifications pour les appels des fonctions fseek, call
 
 
 FILE * midihead( char * nompartition ){		//OK
-	char t[12]={0x4d,0x54,0x68,0x64,0x00,0x00,0x00,0x06,0x00,0x01,0x00,0x01}; // ici on a mis le nombre de division à 0xF0= 240 , peut être provisoire
+	char t[14]={0x4d,0x54,0x68,0x64,0x00,0x00,0x00,0x06,0x00,0x01,0x00,0x01,0x00,0xF0}; // ici on a mis le nombre de division à 0xF0= 240 , peut être provisoire
 	FILE * midibin;
 	midibin = fopen(nompartition,"w+b");
 	fwrite(t,sizeof(char),sizeof(t),midibin);
-	printf("divnoire : %d\n",divnoire);
-	divnoire= ((divnoire<<8)&0xff00) | ((divnoire>>8)&0x00ff) ;
-	fwrite(&divnoire,sizeof(divnoire),1,midibin);
 	return midibin;
 }
 
