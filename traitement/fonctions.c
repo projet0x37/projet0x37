@@ -14,6 +14,7 @@ extern double thresvi;
 extern FILE * logfile;
 extern int boollog;
 
+
 int arraymultiplication( frame X, frame Y, int sizeframe , frame zb){ //OK
 	int i;
 	if(!X || !Y || !zb){
@@ -137,7 +138,10 @@ frame noisesup( frame X , int k0 , int k1 , int sizeframe , double ratio, frame 
 	frame Y;
 	frame Z;
 	Y = Y_extraction( X , sizeframe , k0 , k1);
+	
 	moving_average( Y , ratio , sizeframe , N);
+	
+	
 	Z = Z_calc( Y , N , sizeframe );
 	free(Y);
 	return Z;
@@ -357,7 +361,11 @@ void Z_smoothing(double* z, int taille , int k , double kmin){		//  OK
 	double kb;
 	double rb;
 	double* b = calloc(taille,sizeof(double));
-
+	
+		textexport("Znormal",z,taille,1000);
+		printf("K trouvé %d\n",k);
+	}
+	
 	while(i+k < taille){
 
 		kb = i-i*RATIOLISSAGE/2;
@@ -374,8 +382,9 @@ void Z_smoothing(double* z, int taille , int k , double kmin){		//  OK
 
 		if(i==k && m!=0) nfactor = (double)z[i]/m;
 		m = m*nfactor;
-        	j0 = floor(i-pow(i,1/12)*(3/4));
-       		j1 = floor(i+pow(i,1/12)*(3/4))+1;
+        	j0 = floor((i-i*(1-1./pow(2,1./12))/2));
+       		j1 = floor((i+i*(pow(2,1./12)-1)/2));
+		
 
 		for(j=j0;j<j1+1;j++){
             		if(abs(j-i)<4){
@@ -390,6 +399,7 @@ void Z_smoothing(double* z, int taille , int k , double kmin){		//  OK
 	for(i=0;i<taille;i++){
 		z[i] = z[i]-zsmoothed[i];
 	}
+	
 	free(zb);
 	free(b);
 	free(M0);
@@ -559,8 +569,7 @@ int boucle(chord * tabchord , frame Z , int sizeframe , double SNR , double kmin
 		Lvector(Z,sizeframe,L,MatrixB,b_m0_m2);
 		if(i!=0){ // En partant du principe que les fréquences fondamentales les plus basses sont les premières détectées avec cette méthode, on supprime du vecteur L les fondamentales des notes précédement trouvées
 			for(j=0;j<i;j++){
-				ksup = tabchord[j].kech;
-				
+				ksup = tabchord[j].kech;				
 				ksup0 = ceil(ksup-pow(ksup,(double)1/12)/2); // on s'autorise une largeur d'un quart de ton autour de la note , ~ 6 % de marge
 				ksup1 = floor(ksup + pow(ksup,(double)1/12)/2);
 				for(ks=ksup0;ks<=ksup1;ks++)L[ks]=0;
@@ -635,10 +644,10 @@ int frameprocessing( chord * tabchord , frame x , int sizeframe , double sampler
 	
 
 	Z  = noisesup( DSP , round(k0) , floor(k1)+1 , sizeframe/2+1 , (double)2./3. , N );
+
 	SNR = SNR_calc( DSP , N , sizeframe/2+1 , k0 , k1); // on calcul une seule fois le rapport signal sur bruit utilisé par la suite
 	free(N);
 	free(DSP); // une fois que le rapport signal sur bruit (SNR) est calculé et que X est traité , N et X sont inutiles
-
 
 	b = boucle(tabchord,Z,sizeframe/2+1,SNR,kmin,MatrixB,b_m0_m2,NoteBank);
 	free(Z);
