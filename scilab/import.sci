@@ -1,5 +1,5 @@
-function import(c)
-    figure()
+function import(c,t)
+    //figure()
     v=fscanfMat(c)
-    plot(v',)
+    plot(v,t)
 endfunction
