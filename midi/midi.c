@@ -41,11 +41,11 @@ Important: rajouter des vérifications pour les appels des fonctions fseek, call
 FILE * midihead( char * nompartition ){		//OK
 	char t[12]={0x4d,0x54,0x68,0x64,0x00,0x00,0x00,0x06,0x00,0x01,0x00,0x01}; // ici on a mis le nombre de division à 0xF0= 240 , peut être provisoire
 	FILE * midibin;
+	int16_t swappeddivnoire;
 	midibin = fopen(nompartition,"w+b");
 	fwrite(t,sizeof(char),sizeof(t),midibin);
-	printf("divnoire : %d\n",divnoire);
-	divnoire= ((divnoire<<8)&0xff00) | ((divnoire>>8)&0x00ff) ;
-	fwrite(&divnoire,sizeof(divnoire),1,midibin);
+	swappeddivnoire= ((divnoire<<8)&0xff00) | ((divnoire>>8)&0x00ff) ;
+	fwrite(&swappeddivnoire,sizeof(swappeddivnoire),1,midibin);
 	return midibin;
 }
 

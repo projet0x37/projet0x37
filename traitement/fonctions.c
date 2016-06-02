@@ -566,8 +566,8 @@ int boucle(chord * tabchord , frame Z , int sizeframe , double SNR , double kmin
 		if(i!=0){ // En partant du principe que les fréquences fondamentales les plus basses sont les premières détectées avec cette méthode, on supprime du vecteur L les fondamentales des notes précédement trouvées
 			for(j=0;j<i;j++){
 				ksup = tabchord[j].kech;				
-				ksup0 = ceil(ksup-pow(ksup,(double)1/12)/2); // on s'autorise une largeur d'un quart de ton autour de la note , ~ 6 % de marge
-				ksup1 = floor(ksup + pow(ksup,(double)1/12)/2);
+				ksup0 = floor((ksup-ksup*(1-1./pow(2,1./12))/2)); // on s'autorise une largeur d'un quart de ton autour de la note , ~ 6 % de marge//
+				ksup1 = floor((ksup+ksup*(pow(2,1./12)-1)/2));
 				for(ks=ksup0;ks<=ksup1;ks++)L[ks]=0;
 			}
 		}

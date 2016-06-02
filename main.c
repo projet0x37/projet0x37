@@ -40,7 +40,7 @@ void disphelp(void){
 	printf("			     cette valeur est inversement proportionnelle au nombre de notes détectées à un instant donné ( en excluant la première note, voir -v).\n\n");
 	printf("  -t N			modifie la taille de la porte utilisée pour le traitement, N prend des valeurs entre 1 et 4 inclus.\n");
 	printf("			     1 : 2048    2 : 4096    3 : 8192    4 : 16384    Par défaut N = 3\n\n");
-	printf("  -D division		modifie la valeur de la division de la noire");
+	printf("  -D division		modifie la valeur de la division de la noire\n\n");
 }
 
 int main(int argc, char** argv){
@@ -54,7 +54,7 @@ int main(int argc, char** argv){
 	int c;
 	char *filename=NULL;
 	char *logfilename=NULL;
-	char * midiname =NULL;
+
 	Tnote T;
 	userchannel = 0;
 	divnoire = 240;
@@ -163,16 +163,9 @@ int main(int argc, char** argv){
 	//mainmidi("outputmidi.mid",T,sizeTmax);
 	T=simplifT(T,sizeTmax);
 	//T=condT(T,sizeTmax,0.101); prototype
-	if(!filename){
-		printf("Création du fichier midi outputmidi-input.wav.mid ...\n");
-		mainmidi("outputmidi-input.wav.mid",T,sizeTmax);
-	}
-	else{
-		midiname=calloc(100,sizeof(char));
-		sprintf(midiname,"outputmidi-%s.mid",filename);
-		printf("Création du fichier midi %s ...\n",midiname);
-		mainmidi(midiname,T,sizeTmax);
-	}
+	printf("Création du fichier midi outputmidi ...\n");
+	mainmidi("outputmidi",T,sizeTmax);
+	
 	printf("Succès ! \n");
 	if(boollog){
 		if(!filename)printf("Les informations relatives au traitement du fichier sont disponibles dans log-projet0x37-input.wav\n");
