@@ -362,10 +362,6 @@ void Z_smoothing(double* z, int taille , int k , double kmin){		//  OK
 	double rb;
 	double* b = calloc(taille,sizeof(double));
 	
-		textexport("Znormal",z,taille,1000);
-		printf("K trouvé %d\n",k);
-	}
-	
 	while(i+k < taille){
 
 		kb = i-i*RATIOLISSAGE/2;
