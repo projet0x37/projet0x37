@@ -149,7 +149,7 @@ int main(int argc, char** argv){
 			sprintf(logfilename,"log-projet0x37-%s",filename);
 			logfile=fopen(logfilename,"w");
 		}
-		fprintf(logfile,"Log projet0x37.exe\nFréquence d'échantillonnage : %lf Canal : %d Durée : %lf\nLargeur des portes : %lf Résolution : %lf\nThresv0 : %lf Thresvi : %lf\nVaration minimale de vi : %lf Nombre d'itération maximale : %d\n",samplerate,userchannel,duration,sizeframe/samplerate,sizeframe/(2*samplerate),thresv0,thresvi,DELTAMIN,IMAX);
+		fprintf(logfile,"Log projet0x37.exe\nFréquence d'échantillonnage : %lf Canal : %d Durée : %lf\nLargeur des portes : %lf Résolution : %lf\nThresv0 : %lf Thresvi : %lf\nNombre d'itération maximale : %d\n",samplerate,userchannel,duration,sizeframe/samplerate,sizeframe/(2*samplerate),thresv0,thresvi,IMAX);
 	}
 
 	if( facteurmoyenne < 0 ) facteurmoyenne =1;

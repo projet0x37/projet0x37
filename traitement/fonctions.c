@@ -549,7 +549,7 @@ int boucle(chord * tabchord , frame Z , int sizeframe , double SNR , double kmin
 	int ks;
 	int  kmax;
 	double Lmax = 0;
-	double deltavi = 0;
+	//double deltavi = 0;
 	double vi = 0;
 	int itcheck = 1;
 
@@ -587,10 +587,9 @@ int boucle(chord * tabchord , frame Z , int sizeframe , double SNR , double kmin
 			}
 		}
 		else{
-			deltavi = vi; // deltavi permet de quantifier la modification du vecteur L en conséquence du lissage de Z, si deltavi ne varie plus on suppose qu'il n'y a plus rien a détecter, cela evite de faire tourner la boucle pour rien
+			//deltavi = vi; // deltavi permet de quantifier la modification du vecteur L en conséquence du lissage de Z, si deltavi ne varie plus on suppose qu'il n'y a plus rien a détecter, cela evite de faire tourner la boucle pour rien
 			itcheck = iteration_checking( Lmax , SNR , &vi); // condition sur le seuil thresvi , à mesure qu'on supprime du spectre Z des informations, Lmax diminue , s'il est trop faible on ne stocke aucune information
-			deltavi = fabs( deltavi - vi );
-			if( itcheck == 1 && i < IMAX && deltavi > DELTAMIN ){ // on suppose qu'il est impossible de détecter plus de 10 notes , cela permet de limiter la boucle quoi qu'il arrive				
+			if( itcheck == 1 && i < IMAX ){ // on suppose qu'il est impossible de détecter plus de 10 notes , cela permet de limiter la boucle			
 				tabchord[i].kech = kmax;
 				tabchord[i].note = correspondancenote( kmax , NotesBank );
 				if(boollog)fprintf(logfile,"		note : %d\n",tabchord[i].note);
@@ -598,7 +597,7 @@ int boucle(chord * tabchord , frame Z , int sizeframe , double SNR , double kmin
 				i++;
 			}
 			else{
-				if(boollog)fprintf(logfile,"		(note : %d),deltavi : %lf\n",correspondancenote( (int)kmax , NotesBank ),deltavi);
+				if(boollog)fprintf(logfile,"		(note : %d)\n",correspondancenote( (int)kmax , NotesBank ));
 				b = 0;
 			}
 		}

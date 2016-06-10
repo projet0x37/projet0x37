@@ -12,7 +12,6 @@
 #define OFFSETMIDI 21 // décalage du numéro des notes pour correspondre à la notation midi 
 #define RATIOLISSAGE (double)1 // ratio pour le lissage
 #define RATIOBANDE (double)2/3 // ratio pour le calcul des bandes passantes triangulaires
-#define DELTAMIN 0.001 // permet d'ajouter une condition pour la boucle() , si vi n'est pas assez modifié , la boucle est arrétée
 #define NBNOTES 88 // nombre de notes selon lesquelles des correspondances ( N°note <> fréquence ] s'effectuent
 #define BMIN 100 //largeur minimale des portes triangulaires
 #define FMIN 50 // fréquence minimale a partir de laquelle les traitements se font
